@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Algorithmus-Spiegel</title>
+<meta name="description" content="Ein Selbsttest für Klasse 7 und älter: Was hat dein Feed aus dir gemacht? Läuft komplett offline im Browser, speichert nichts und sendet nichts.">
+<meta name="author" content="Peter Weißer">
+<style>
+/* =========================================================
+   DESIGN TOKENS (gleiche Familie wie "Wie Algorithmen unsere Meinung beeinflussen")
+   Keine externen Schriften, kein Netzwerk.
+   ========================================================= */
+:root {
+  --bg: #0e1014;
+  --bg-elev: #161a22;
+  --bg-elev-2: #1e2330;
+  --border: #2a3142;
+  --text: #e6e9ef;
+  --text-dim: #aab2c3;
+  --text-mute: #8a93a8;
+  --accent: #7aa2ff;
+  --accent-2: #a78bfa;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  --ok: #34d399;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", "Cascadia Code", Consolas, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f7f8fa; --bg-elev: #ffffff; --bg-elev-2: #f1f3f7; --border: #d0d6e2;
+    --text: #1a1d24; --text-dim: #3f485b; --text-mute: #5e677a;
+    --accent: #2f5fd0; --accent-2: #6d4fd6; --warn: #8a5a00; --danger: #b42318; --ok: #12754f;
+    --shadow: 0 6px 24px rgba(20,24,40,0.08);
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f7f8fa; --bg-elev: #ffffff; --bg-elev-2: #f1f3f7; --border: #d0d6e2;
+  --text: #1a1d24; --text-dim: #3f485b; --text-mute: #5e677a;
+  --accent: #2f5fd0; --accent-2: #6d4fd6; --warn: #8a5a00; --danger: #b42318; --ok: #12754f;
+  --shadow: 0 6px 24px rgba(20,24,40,0.08);
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; font-family: var(--font); background: var(--bg); color: var(--text);
+  line-height: 1.6; -webkit-font-smoothing: antialiased; font-size: 16px;
+}
+[hidden] { display: none !important; }
+h1, h2, h3 { line-height: 1.2; margin: 0 0 0.6rem; letter-spacing: -0.01em; }
+h1 { font-size: clamp(1.7rem, 5vw, 2.4rem); }
+h2 { font-size: 1.3rem; }
+h3 { font-size: 1.05rem; }
+p { margin: 0 0 0.9rem; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.topbar {
+  position: sticky; top: 0; z-index: 20; display: flex; justify-content: space-between; align-items: center;
+  gap: 0.6rem; padding: 0.7rem 1rem; background: var(--bg-elev); border-bottom: 1px solid var(--border);
+}
+.brand { font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; }
+.brand-dot { width: 10px; height: 10px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+.topbar-actions { display: flex; gap: 0.4rem; }
+.icon-btn {
+  min-height: 40px; min-width: 40px; padding: 0 0.8rem; border-radius: 999px; cursor: pointer;
+  background: var(--bg-elev-2); color: var(--text); border: 1px solid var(--border); font: inherit; font-size: 0.85rem;
+}
+.icon-btn:hover { border-color: var(--accent); }
+
+main { max-width: 760px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.6rem; }
+.lead { font-size: 1.1rem; color: var(--text-dim); }
+.muted { color: var(--text-dim); }
+.small { font-size: 0.88rem; }
+
+.card {
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1.1rem 1.2rem; margin: 0 0 1rem; box-shadow: var(--shadow);
+}
+.card.note { border-left: 4px solid var(--accent); }
+.card.warn { border-left: 4px solid var(--warn); }
+.card.privacy { border-left: 4px solid var(--ok); }
+.card ol, .card ul { margin: 0 0 0.6rem; padding-left: 1.3rem; }
+.card li { margin-bottom: 0.35rem; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 48px;
+  padding: 0.7rem 1.3rem; border-radius: var(--radius-sm); border: 1px solid var(--border);
+  background: var(--bg-elev-2); color: var(--text); font: inherit; font-weight: 600; cursor: pointer;
+}
+.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #0b0d12; border: 0; }
+.btn-row { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.6rem; }
+
+/* Karten-Eingabe */
+.progress { height: 6px; background: var(--bg-elev-2); border-radius: 999px; overflow: hidden; margin: 0.5rem 0 0.6rem; }
+.progress > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .25s; }
+.dots { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; }
+.dot {
+  width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border); background: var(--bg-elev);
+  color: var(--text-dim); font: inherit; font-size: 0.8rem; cursor: pointer;
+}
+.dot.done { background: var(--ok); color: #06120d; border-color: var(--ok); }
+.dot.cur { outline: 3px solid var(--accent); outline-offset: 1px; }
+fieldset { border: 0; padding: 0; margin: 0 0 1.1rem; }
+legend { font-weight: 700; margin-bottom: 0.5rem; padding: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.chip {
+  min-height: 44px; padding: 0.45rem 0.9rem; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--bg-elev-2); color: var(--text); font: inherit; font-size: 0.92rem; cursor: pointer; text-align: left;
+}
+.chip:hover { border-color: var(--accent); }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #0b0d12; font-weight: 700; }
+
+/* Auswertung */
+.hero { text-align: left; padding: 1.3rem 1.2rem; }
+.hero .big { font-size: clamp(1.5rem, 5vw, 2.1rem); font-weight: 800; letter-spacing: -0.02em; margin: 0.2rem 0 0.5rem; }
+.bars { display: grid; gap: 0.55rem; margin: 0.6rem 0 0.4rem; }
+.bar-row { display: grid; grid-template-columns: minmax(110px, 38%) 1fr 2.4rem; gap: 0.6rem; align-items: center; font-size: 0.9rem; }
+.bar-track { height: 14px; background: var(--bg-elev-2); border-radius: 999px; overflow: hidden; }
+.bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 999px; }
+.bar-fill.alt { background: linear-gradient(90deg, var(--warn), var(--danger)); }
+.bar-val { font-family: var(--font-mono); text-align: right; color: var(--text-dim); }
+.meter { height: 18px; border-radius: 999px; background: var(--bg-elev-2); position: relative; overflow: hidden; margin: 0.5rem 0; }
+.meter > div { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+.pill { display: inline-block; font-family: var(--font-mono); font-size: 0.78rem; padding: 0.15rem 0.55rem; border-radius: 999px; background: var(--bg-elev-2); border: 1px solid var(--border); color: var(--text-dim); }
+.code-box {
+  font-family: var(--font-mono); font-size: 1.05rem; padding: 0.8rem 1rem; background: var(--bg-elev-2);
+  border: 1px dashed var(--accent); border-radius: var(--radius-sm); word-break: break-all; user-select: all;
+}
+textarea {
+  width: 100%; min-height: 110px; padding: 0.7rem; border-radius: var(--radius-sm); border: 1px solid var(--border);
+  background: var(--bg); color: var(--text); font: inherit; font-family: var(--font-mono); font-size: 0.9rem;
+}
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.6rem; margin: 0.4rem 0 0.8rem; }
+.stat { background: var(--bg-elev-2); border-radius: var(--radius-sm); padding: 0.7rem 0.9rem; }
+.stat b { display: block; font-size: 1.6rem; letter-spacing: -0.02em; }
+.stat span { font-size: 0.85rem; color: var(--text-dim); }
+.msg { min-height: 1.4em; font-size: 0.9rem; color: var(--text-dim); }
+footer { max-width: 760px; margin: 0 auto; padding: 0 1rem 3rem; color: var(--text-mute); font-size: 0.82rem; }
+footer button { color: var(--accent); cursor: pointer; text-decoration: underline; background: none; border: 0; font: inherit; padding: 0.25rem 0; min-height: 32px; }
+
+.timerbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin: 0 0 0.8rem; padding: 0.5rem 0.8rem; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.timerbar .time { font-family: var(--font-mono); font-size: 1.3rem; font-weight: 700; }
+.timerbar .time.over { color: var(--warn); }
+.btn.small { min-height: 40px; padding: 0.4rem 0.9rem; font-size: 0.9rem; }
+@media (max-width: 520px) {
+  .bar-row { grid-template-columns: 1fr 2.4rem; }
+  .bar-row .bar-track { grid-column: 1 / -1; order: 3; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+
+@media print {
+  :root, :root[data-theme] { --bg:#fff; --bg-elev:#fff; --bg-elev-2:#f1f3f7; --border:#bbb; --text:#000; --text-dim:#222; --text-mute:#444; --accent:#1c3f99; --accent-2:#1c3f99; color-scheme: light; }
+  .topbar, .btn-row, footer, .no-print { display: none !important; }
+  .card { box-shadow: none; break-inside: avoid; }
+  .bar-fill, .meter > div { background: #1c3f99 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><span class="brand-dot" aria-hidden="true"></span>Algorithmus-Spiegel</div>
+  <div class="topbar-actions">
+    <button class="icon-btn" id="btn-theme" type="button" aria-label="Hell oder dunkel umschalten">Hell/Dunkel</button>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- START -->
+  <section class="screen" id="screen-start" aria-labelledby="h-start">
+    <p class="eyebrow">Selbsttest · ab Klasse 7</p>
+    <h1 id="h-start" tabindex="-1">Was hat dein Feed aus dir gemacht?</h1>
+    <p class="lead">Du ordnest zehn Videos aus deinem eigenen Feed ein. Danach siehst du, welches Bild ein Algorithmus aus deinem Verhalten bauen würde.</p>
+
+    <div class="card privacy">
+      <h3>Das bleibt auf deinem Gerät</h3>
+      <p class="small" style="margin:0">Keine Screenshots, keine Videos, keine Namen, kein Konto. Die Seite sendet nichts ab und speichert nichts. Wenn du sie schließt, ist alles weg. Ein Klassencode ist freiwillig und enthält nur Zahlen.</p>
+    </div>
+
+    <div class="card">
+      <h3>So geht es</h3>
+      <ol>
+        <li>Öffne auf einem zweiten Gerät deinen Feed (TikTok, Instagram Reels, YouTube Shorts, was du nutzt).</li>
+        <li>Schau dir deinen Feed an, wie du es sonst auch tust. Wische nicht gezielt weiter, um etwas Bestimmtes zu finden.</li>
+        <li>Trage jedes Video hier ein: Worum ging es, was hat es mit dir gemacht, woher kam es, was hast du getan.</li>
+        <li>Ab zehn Videos kannst du auswerten. Nach oben gibt es kaum eine Grenze, maximal 60. Je mehr, desto genauer das Bild.</li>
+      </ol>
+      <p class="small muted" style="margin:0">Je ehrlicher du bist, desto besser passt das Bild. Niemand bewertet dich, die Antworten sieht nur dein Gerät.</p>
+    </div>
+
+    <div class="card">
+      <h3 id="h-time">Zeitfenster (optional)</h3>
+      <p class="small muted">Reels sind in Sekunden durch. Ein Timer hilft dir, nicht ewig weiterzuscrollen. Er stoppt nichts, er erinnert dich nur.</p>
+      <div class="chips" id="time-chips" role="group" aria-labelledby="h-time">
+        <button type="button" class="chip" data-t="180" aria-pressed="false">3 Minuten</button>
+        <button type="button" class="chip" data-t="300" aria-pressed="true">5 Minuten</button>
+        <button type="button" class="chip" data-t="600" aria-pressed="false">10 Minuten</button>
+        <button type="button" class="chip" data-t="0" aria-pressed="false">Ohne Timer</button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn primary" type="button" id="btn-start">Los geht es</button>
+      <button class="btn" type="button" id="btn-demo">Ich habe kein Konto: Beispiel-Feed ansehen</button>
+    </div>
+  </section>
+
+  <!-- KARTEN -->
+  <section class="screen" id="screen-cards" aria-labelledby="h-card" hidden>
+    <p class="eyebrow" id="card-eyebrow">Video 1</p>
+    <h2 id="h-card" tabindex="-1">Ordne das Video ein</h2>
+    <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" aria-label="Fortschritt bis zur Auswertung" id="progress"><div id="progress-fill"></div></div>
+    <div class="timerbar" id="timerbar" hidden>
+      <span class="time" id="timer-time">5:00</span>
+      <button class="btn small" type="button" id="btn-timer">Timer starten</button>
+      <span class="small muted" id="timer-note"></span>
+    </div>
+    <div class="dots" id="dots" aria-label="Zu einem Video springen"></div>
+    <div class="card" id="card-body"></div>
+    <div class="btn-row">
+      <button class="btn" type="button" id="btn-back">Zurück</button>
+      <button class="btn primary" type="button" id="btn-next" disabled>Nächstes Video</button>
+      <button class="btn" type="button" id="btn-eval" disabled>Auswerten</button>
+      <button class="btn" type="button" id="btn-del">Dieses Video löschen</button>
+    </div>
+    <p class="msg" id="card-msg" role="status"></p>
+  </section>
+
+  <!-- ERGEBNIS -->
+  <section class="screen" id="screen-result" aria-labelledby="h-result" hidden>
+    <p class="eyebrow">Dein Ergebnis</p>
+    <h1 id="h-result" tabindex="-1">Dein Feed in Videos</h1>
+    <div id="result-body"></div>
+    <div class="btn-row no-print">
+      <button class="btn" type="button" id="btn-print">Drucken oder als PDF</button>
+      <button class="btn" type="button" id="btn-again">Nochmal von vorn</button>
+      <button class="btn" type="button" id="btn-to-class">Klassen-Mosaik (Lehrkraft)</button>
+    </div>
+  </section>
+
+  <!-- KLASSE -->
+  <section class="screen" id="screen-class" aria-labelledby="h-class" hidden>
+    <p class="eyebrow">Für die Lehrkraft</p>
+    <h1 id="h-class" tabindex="-1">Klassen-Mosaik</h1>
+    <p class="lead">Aus den Klassencodes entsteht ein gemeinsames Bild. Einzelne Feeds siehst du nie. Jeder Feed zählt gleich viel, egal wie viele Videos erfasst wurden.</p>
+
+    <div class="card privacy">
+      <h3>Datenschutz in dieser Ansicht</h3>
+      <ul class="small">
+        <li>Ein Code enthält nur die Anteile pro Sparte und die Zahl der erfassten Videos. Keine Gefühle, keine Namen, kein Text.</li>
+        <li>Nach dem Auswerten wird das Eingabefeld sofort geleert. Gemerkt werden nur Zahlen im Speicher dieser Seite.</li>
+        <li>Codes bitte ohne Namen und ohne Reihenfolge einsammeln, zum Beispiel an einem gemeinsamen Gerät eintippen lassen.</li>
+        <li>Kein Kind wird gezwungen. Wer keinen Code abgibt, fehlt im Bild, mehr nicht.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <label for="codes"><h3>Klassencodes einfügen (einer pro Zeile)</h3></label>
+      <textarea id="codes" placeholder="AS2-…" spellcheck="false" autocomplete="off"></textarea>
+      <div class="btn-row">
+        <button class="btn primary" type="button" id="btn-add">Auswerten</button>
+        <button class="btn" type="button" id="btn-sample">Beispielklasse laden (erfundene Daten)</button>
+        <button class="btn" type="button" id="btn-reset">Alles zurücksetzen</button>
+      </div>
+      <p class="msg" id="class-msg" role="status"></p>
+    </div>
+
+    <div id="class-body"></div>
+    <div class="btn-row no-print">
+      <button class="btn" type="button" id="btn-class-print">Drucken oder als PDF</button>
+      <button class="btn" type="button" id="btn-class-back">Zurück</button>
+    </div>
+  </section>
+
+  <!-- INFO -->
+  <section class="screen" id="screen-info" aria-labelledby="h-info" hidden>
+    <h1 id="h-info" tabindex="-1">Methode, Grenzen, Datenschutz</h1>
+    <div class="card">
+      <h3>Was die Zahlen bedeuten</h3>
+      <ul class="small">
+        <li><b>Schwerpunkt:</b> Anteil der Videos pro Sparte unter allen, die du erfasst hast. Ab 40 % heißt es Schwerpunkt, ab 30 % Tendenz.</li>
+        <li><b>Was dich festhält:</b> „Ganz geschaut“ zählt 1 Punkt, „nochmal, geliked, geteilt oder gespeichert“ zählt 2 Punkte, „weitergewischt“ zählt 0. Das ist ein einfaches Modell der Signale, die Empfehlungssysteme in der Regel auswerten. Wie eine konkrete Plattform gewichtet, ist nicht öffentlich.</li>
+        <li><b>Vielfalt:</b> Normalisierte Shannon-Entropie über die Sparten deiner Videos. 100 % hieße: die Videos verteilen sich so breit wie möglich (höchstens 13 Sparten). 0 % hieße: alle aus derselben.</li>
+        <li><b>Starke Gefühle:</b> Neid oder Vergleich, Wut, Angst und Unwohlsein zusammen.</li>
+      </ul>
+    </div>
+    <div class="card warn">
+      <h3>Was dieses Tool nicht kann</h3>
+      <ul class="small">
+        <li>Ein paar Minuten Feed sind eine kleine Stichprobe. Ein Feed ändert sich täglich.</li>
+        <li>Wer nur einen Teil der Videos einträgt, wählt dabei aus. Das verzerrt das Bild, vor allem wenn man Peinliches weglässt.</li>
+        <li>Alle Angaben sind Selbstauskunft und Erinnerung. Das Tool kann sie nicht prüfen, und wer will, kann sie verfälschen.</li>
+        <li>Es misst keine Radikalisierung und stellt keine Diagnose. Es zeigt, wie ein Muster aus wenigen Signalen entsteht.</li>
+        <li>Die Sparten sind grob. Wer „Gaming“ wählt, kann ganz Unterschiedliches meinen.</li>
+      </ul>
+    </div>
+    <div class="card note">
+      <h3>Rahmen für den Einsatz (Vorschlag)</h3>
+      <ul class="small">
+        <li>Das Tool funktioniert nur, wenn Jugendliche ihren echten Feed ansehen dürfen. Das braucht eine klare Absprache zur Handynutzung und Zurückhaltung der Lehrkraft: keine Kommentare zu Inhalten, keine Blicke auf einzelne Bildschirme.</li>
+        <li>Die Schulregeln zur privaten Handynutzung und zur Altersgrenze der Plattformen sind vorher mit der Schulleitung zu klären.</li>
+        <li>Feeds können Verstörendes enthalten. Wer das nicht möchte, nutzt den Beispiel-Feed.</li>
+      </ul>
+    </div>
+    <div class="card privacy">
+      <h3>Datenschutz</h3>
+      <p class="small" style="margin:0">Die Datei ist eine einzelne HTML-Seite ohne externe Schriften, Skripte oder Tracker. Sie sendet nichts ins Netz, nutzt weder Cookies noch Local Storage und hat keine Freitextfelder, die irgendwo ausgewertet werden. Das Reflexionsfeld im Ergebnis bleibt auf dem Gerät und verschwindet beim Schließen.</p>
+    </div>
+    <div class="btn-row"><button class="btn" type="button" id="btn-info-back">Zurück</button></div>
+  </section>
+
+</main>
+
+<footer>
+  Algorithmus-Spiegel · Entwurf v0.1 · Peter Weißer, Medienberatung ·
+  <button type="button" id="link-info">Methode, Grenzen, Datenschutz</button> ·
+  <button type="button" id="link-class">Klassen-Mosaik</button>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- Daten ---------- */
+  var MIN = 10, MAXV = 60, SCALE = 35;
+  var SP = [
+    ['comedy', 'Comedy & Memes'], ['beauty', 'Beauty & Styling'], ['gaming', 'Gaming'],
+    ['sport', 'Sport & Fitness'], ['musik', 'Musik & Tanz'], ['tiere', 'Tiere'],
+    ['essen', 'Essen & Kochen'], ['schule', 'Schule & Lifehacks'], ['news', 'Nachrichten & Politik'],
+    ['meinung', 'Meinung & Streit'], ['challenge', 'Challenges & Pranks'], ['werbung', 'Werbung & Shopping'],
+    ['sonst', 'Sonstiges']
+  ];
+  var EM = [
+    ['lustig', 'Lustig'], ['neugierig', 'Neugierig'], ['neid', 'Neid oder Vergleich'],
+    ['wut', 'Wütend oder empört'], ['angst', 'Ängstlich oder besorgt'], ['unwohl', 'Unwohl'],
+    ['egal', 'Egal, lief nebenbei']
+  ];
+  var STRONG = { neid: 1, wut: 1, angst: 1, unwohl: 1 };
+  var HK = [['gesucht', 'Hab ich gesucht oder abonniert'], ['kam', 'Kam einfach so']];
+  var AK = [
+    ['weg', 'Schnell weitergewischt'], ['ganz', 'Ganz geschaut'],
+    ['mehr', 'Nochmal gesehen, geliked, geteilt oder gespeichert']
+  ];
+  var GROUPS = [
+    ['sp', 'Worum ging es?', SP], ['em', 'Was hat es mit dir gemacht?', EM],
+    ['hk', 'Woher kam es?', HK], ['ak', 'Was hast du getan?', AK]
+  ];
+  var SCORE = { weg: 0, ganz: 1, mehr: 2 };
+
+  /* ---------- Zustand (nur im Speicher) ---------- */
+  var feed, idx, pool = [];
+  var timerLen = 300, timerLeft = 0, timerId = null, ranOnce = false;
+  function emptyVideo() { return { sp: null, em: null, hk: null, ak: null }; }
+  function emptyFeed() { return [emptyVideo()]; }
+  feed = emptyFeed(); idx = 0;
+  function doneCount() { return feed.filter(complete).length; }
+
+  /* ---------- Helfer ---------- */
+  function $(s) { return document.querySelector(s); }
+  function label(list, key) { for (var i = 0; i < list.length; i++) if (list[i][0] === key) return list[i][1]; return key; }
+  function pct(a, b) { return b ? Math.round(a / b * 100) : 0; }
+  function complete(v) { return !!(v.sp && v.em && v.hk && v.ak); }
+
+  function show(id) {
+    var s = document.querySelectorAll('.screen');
+    for (var i = 0; i < s.length; i++) s[i].hidden = (s[i].id !== id);
+    window.scrollTo(0, 0);
+    var h = $('#' + id + ' [tabindex="-1"]');
+    if (h) h.focus({ preventScroll: true });
+  }
+
+  function bars(items, max, alt) {
+    var out = '<div class="bars">';
+    items.forEach(function (it) {
+      var w = max ? Math.round(it[1] / max * 100) : 0;
+      out += '<div class="bar-row"><span>' + it[0] + '</span><div class="bar-track" aria-hidden="true"><div class="bar-fill' +
+        (alt ? ' alt' : '') + '" style="width:' + w + '%"></div></div><span class="bar-val">' + it[2] + '</span></div>';
+    });
+    return out + '</div>';
+  }
+
+  /* ---------- Karten ---------- */
+  function renderCard() {
+    var v = feed[idx], done = doneCount();
+    $('#card-eyebrow').textContent = 'Video ' + (idx + 1) + ' · erfasst: ' + done;
+    var prog = Math.min(done, MIN);
+    $('#progress-fill').style.width = (prog / MIN * 100) + '%';
+    $('#progress').setAttribute('aria-valuenow', String(prog));
+    var dots = '';
+    for (var i = 0; i < feed.length; i++) {
+      dots += '<button type="button" class="dot' + (complete(feed[i]) ? ' done' : '') + (i === idx ? ' cur' : '') +
+        '" data-i="' + i + '" aria-label="Video ' + (i + 1) + (complete(feed[i]) ? ' (fertig)' : '') + '">' + (i + 1) + '</button>';
+    }
+    $('#dots').innerHTML = dots;
+    var html = '';
+    GROUPS.forEach(function (g) {
+      html += '<fieldset><legend>' + g[1] + '</legend><div class="chips">';
+      g[2].forEach(function (o) {
+        html += '<button type="button" class="chip" data-g="' + g[0] + '" data-v="' + o[0] +
+          '" aria-pressed="' + (v[g[0]] === o[0]) + '">' + o[1] + '</button>';
+      });
+      html += '</div></fieldset>';
+    });
+    $('#card-body').innerHTML = html;
+    $('#btn-back').disabled = idx === 0;
+    var last = idx === feed.length - 1;
+    var nb = $('#btn-next');
+    nb.disabled = !complete(v) || (last && feed.length >= MAXV);
+    nb.textContent = last ? 'Nächstes Video' : 'Weiter';
+    $('#btn-eval').disabled = done < MIN;
+    var msg = '';
+    if (!complete(v)) msg = 'Wähle in jeder Zeile eine Antwort.';
+    else if (done < MIN) msg = 'Noch ' + (MIN - done) + ' Video(s) bis zur Auswertung.';
+    else if (feed.length >= MAXV && last) msg = 'Das sind genug Videos für ein gutes Bild. Du kannst auswerten.';
+    $('#card-msg').textContent = msg;
+  }
+
+  /* ---------- Timer ---------- */
+  function fmt(sec) { return Math.floor(sec / 60) + ':' + ('0' + (sec % 60)).slice(-2); }
+  function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
+  function renderTimer() {
+    var bar = $('#timerbar');
+    bar.hidden = !timerLen;
+    if (!timerLen) return;
+    var t = $('#timer-time');
+    t.textContent = fmt(ranOnce ? timerLeft : timerLen);
+    t.classList.toggle('over', ranOnce && timerLeft === 0);
+    $('#btn-timer').textContent = timerId ? 'Timer stoppen' : (ranOnce ? 'Timer neu starten' : 'Timer starten');
+  }
+  function toggleTimer() {
+    if (timerId) { stopTimer(); renderTimer(); return; }
+    ranOnce = true; timerLeft = timerLen;
+    $('#timer-note').textContent = 'Schau deinen Feed an und trage die Videos ein. Ab 0:00 ergänzt du nur noch, was du dir gemerkt hast.';
+    timerId = setInterval(function () {
+      timerLeft--;
+      if (timerLeft <= 0) {
+        timerLeft = 0; stopTimer();
+        $('#timer-note').textContent = 'Zeit um. Ergänze noch, was du dir gemerkt hast, und werte dann aus.';
+        $('#card-msg').textContent = 'Das Zeitfenster ist vorbei.';
+      }
+      renderTimer();
+    }, 1000);
+    renderTimer();
+  }
+  function resetTimer() { stopTimer(); ranOnce = false; timerLeft = 0; $('#timer-note').textContent = ''; }
+
+  /* ---------- Analyse ---------- */
+  function analyze(f) {
+    var counts = SP.map(function () { return 0; });
+    var score = SP.map(function () { return 0; });
+    var emc = {}; EM.forEach(function (e) { emc[e[0]] = 0; });
+    var kam = 0, strong = 0;
+    f.forEach(function (v) {
+      var i = SP.findIndex(function (s) { return s[0] === v.sp; });
+      counts[i]++; score[i] += SCORE[v.ak];
+      emc[v.em]++;
+      if (v.hk === 'kam') kam++;
+      if (STRONG[v.em]) strong++;
+    });
+    var H = 0;
+    counts.forEach(function (c) { if (c) { var p = c / f.length; H -= p * Math.log(p); } });
+    var diversity = Math.round(H / Math.log(Math.min(f.length, SP.length)) * 100);
+    return { counts: counts, score: score, emc: emc, kam: kam, strong: strong, diversity: diversity };
+  }
+
+  function topIdx(arr) {
+    var m = Math.max.apply(null, arr);
+    var r = [];
+    arr.forEach(function (v, i) { if (v === m && m > 0) r.push(i); });
+    return r;
+  }
+
+  function renderResult() {
+    var f = feed.filter(complete), N = f.length;
+    $('#h-result').textContent = 'Dein Feed in ' + N + ' Videos';
+    var a = analyze(f);
+    var topSeen = topIdx(a.counts);
+    var topScore = topIdx(a.score);
+    var maxCount = Math.max.apply(null, a.counts);
+    var main = topSeen.map(function (i) { return SP[i][1]; }).join(' und ');
+
+    var headline, sub;
+    var share = maxCount / N;
+    if (share >= 0.4) {
+      headline = 'Schwerpunkt: ' + main;
+      sub = maxCount + ' von ' + N + ' Videos (' + pct(maxCount, N) + ' %) kamen aus dieser Sparte. Das ist mehr als ein Zufallsmix.';
+    } else if (share >= 0.3) {
+      headline = 'Tendenz: ' + main;
+      sub = maxCount + ' von ' + N + ' Videos (' + pct(maxCount, N) + ' %). Ein Muster zeichnet sich ab, ist aber noch nicht fest.';
+    } else {
+      headline = 'Bunt gemischt';
+      sub = 'Keine Sparte kommt auf 30 % der Videos. Dein Feed ist in dieser Stichprobe breit.';
+    }
+
+    var html = '<div class="card hero note"><p class="eyebrow">Was du gesehen hast</p><div class="big">' + headline + '</div><p class="muted" style="margin:0">' + sub + '</p></div>';
+
+    var seen = [];
+    SP.forEach(function (s, i) { if (a.counts[i]) seen.push([s[1], a.counts[i], a.counts[i]]); });
+    seen.sort(function (x, y) { return y[1] - x[1]; });
+    html += '<div class="card"><h3>Deine ' + N + ' Videos nach Sparte</h3>' + bars(seen, maxCount) + '</div>';
+
+    var totalScore = a.score.reduce(function (x, y) { return x + y; }, 0);
+    html += '<div class="card"><h3>Was dich festgehalten hat</h3>';
+    if (totalScore === 0) {
+      html += '<p class="muted">Du hast alles weitergewischt. Der Algorithmus hätte aus deinem Verhalten kaum etwas gelernt. Das ist selten, und es zeigt, wie viel Gewicht das Dranbleiben hat.</p>';
+    } else {
+      var sc = [];
+      SP.forEach(function (s, i) { if (a.score[i]) sc.push([s[1], a.score[i], a.score[i]]); });
+      sc.sort(function (x, y) { return y[1] - x[1]; });
+      html += '<p class="muted small">Ganz geschaut zählt 1, nochmal, geliked, geteilt oder gespeichert zählt 2. So ungefähr sieht ein Empfehlungssystem dein Interesse.</p>' + bars(sc, Math.max.apply(null, a.score), true);
+      var same = topScore.some(function (i) { return topSeen.indexOf(i) !== -1; });
+      if (same) {
+        html += '<p>Was du am häufigsten siehst, hält dich auch fest. Der Algorithmus hat damit leichtes Spiel, dir mehr davon zu zeigen.</p>';
+      } else {
+        html += '<p>Was du am häufigsten siehst (' + main + '), ist nicht das, was dich am meisten festhält (' +
+          topScore.map(function (i) { return SP[i][1]; }).join(' und ') + '). Für die nächsten Empfehlungen zählt vermutlich Letzteres.</p>';
+      }
+    }
+    html += '</div>';
+
+    html += '<div class="card"><h3>Gesucht oder einfach gekommen?</h3><div class="meter" role="img" aria-label="' + a.kam + ' von ' + N +
+      ' Videos kamen einfach so"><div style="width:' + pct(a.kam, N) + '%"></div></div><p><b>' + a.kam + ' von ' + N + '</b> Videos hast du nicht gesucht.';
+    if (a.kam / N >= 0.8) html += ' Fast alles hat die Plattform für dich ausgewählt.';
+    else if (a.kam / N >= 0.5) html += ' Mehr als die Hälfte hat die Plattform für dich ausgewählt.';
+    else html += ' Du steuerst deinen Feed stark selbst, etwa über Abos oder Suche.';
+    html += '</p></div>';
+
+    var ems = [];
+    EM.forEach(function (e) { if (a.emc[e[0]]) ems.push([e[1], a.emc[e[0]], a.emc[e[0]]]); });
+    ems.sort(function (x, y) { return y[1] - x[1]; });
+    html += '<div class="card"><h3>Was die Videos mit dir gemacht haben</h3>' + bars(ems, Math.max.apply(null, ems.map(function (e) { return e[1]; })));
+    html += '<p>' + a.strong + ' von ' + N + ' Videos haben Neid, Wut, Angst oder Unwohlsein ausgelöst.';
+    if (a.strong / N >= 0.4) html += ' Das ist viel. Empfehlungssysteme optimieren in der Regel auf Verweildauer und Interaktion, nicht darauf, ob dir etwas guttut.';
+    else if (a.strong >= 1) html += ' Auch einzelne solche Videos können dein Bild davon prägen, was „normal“ ist.';
+    else html += ' In dieser Stichprobe kam das nicht vor.';
+    html += '</p>';
+    if (a.emc.unwohl >= 1) html += '<p class="small muted">Wenn dich ein Video belastet, sprich mit einer Lehrkraft oder einer Person, der du vertraust. In den Apps gibt es dafür meist die Funktion „Nicht interessiert“ oder „Melden“. Das ist auch ein Signal an den Algorithmus.</p>';
+    html += '</div>';
+
+    var dl = a.diversity >= 80 ? 'breit' : (a.diversity >= 50 ? 'mittel' : 'schmal');
+    html += '<div class="card"><h3>Vielfalt deines Feeds <span class="pill">' + dl + ' · ' + a.diversity + ' %</span></h3><div class="meter" role="img" aria-label="Vielfalt ' + a.diversity +
+      ' Prozent"><div style="width:' + a.diversity + '%"></div></div><p class="muted small" style="margin:0">100 % hieße: die Videos verteilen sich so breit wie möglich. Das ist ein grobes Maß und kein Urteil.</p></div>';
+
+    html += '<div class="card warn"><h3>Wie viel sagt das aus?</h3><p style="margin:0">' + N + ' Videos, von dir selbst eingeordnet. Das ist ein Schnappschuss, kein Beweis. Frag dich: Wie würde das Ergebnis morgen aussehen? Was hast du vielleicht weggelassen oder anders bewertet, weil es dir peinlich war?</p></div>';
+
+    html += '<div class="card"><h3>Zum Nachdenken</h3><ol>' +
+      '<li>Welches Video hättest du ohne Algorithmus nie gesehen, und warum hat es dich gefunden?</li>' +
+      '<li>Was würde passieren, wenn du eine Woche lang nur Videos aus einer ganz anderen Sparte ganz anschaust?</li>' +
+      '<li>Wer verdient daran, dass du dranbleibst?</li></ol>' +
+      '<label for="reflect" class="small muted">Deine Gedanken (bleiben auf diesem Gerät und verschwinden beim Schließen):</label>' +
+      '<textarea id="reflect" style="font-family:var(--font);min-height:90px" spellcheck="true"></textarea></div>';
+
+    var code = makeCode(a.counts, N);
+    html += '<div class="card no-print"><h3>Klassencode (freiwillig)</h3><p class="small muted">Der Code enthält nur, welchen Anteil deiner Videos zu welcher Sparte gehörten. Keine Gefühle, keine Namen. Gib ihn nur ab, wenn du magst.</p>' +
+      '<div class="code-box" id="my-code">' + code + '</div><div class="btn-row"><button class="btn" type="button" id="btn-copy">Code kopieren</button></div><p class="msg" id="copy-msg" role="status"></p></div>';
+
+    $('#result-body').innerHTML = html;
+  }
+
+  /* ---------- Klassencode ---------- */
+  // Format: AS2-<13 Anteile 0-Z>-<Anzahl Videos, 2 Zeichen>-<Prüfsumme, 2 Zeichen>
+  function b36(n, len) { var t = n.toString(36).toUpperCase(); while (t.length < len) t = '0' + t; return t; }
+  function checksum(sh, n) {
+    var s = n * 17;
+    sh.forEach(function (c, i) { s += c * (i + 3); });
+    return b36(s % 1296, 2);
+  }
+  function makeCode(counts, n) {
+    var sh = counts.map(function (c) { return c ? Math.max(1, Math.round(c / n * SCALE)) : 0; });
+    return 'AS2-' + sh.map(function (c) { return c.toString(36).toUpperCase(); }).join('') + '-' + b36(n, 2) + '-' + checksum(sh, n);
+  }
+  function parseCode(raw) {
+    var m = /^AS2-([0-9A-Z]{13})-([0-9A-Z]{2})-([0-9A-Z]{2})$/.exec(raw.trim().toUpperCase());
+    if (!m) return null;
+    var sh = m[1].split('').map(function (ch) { return parseInt(ch, 36); });
+    var n = parseInt(m[2], 36);
+    var sum = sh.reduce(function (x, y) { return x + y; }, 0);
+    if (sh.some(function (c) { return c > SCALE; }) || n < MIN || n > MAXV || sum === 0 || checksum(sh, n) !== m[3]) return null;
+    return { key: m[0], n: n, p: sh.map(function (c) { return c / sum; }) };
+  }
+
+  /* ---------- Klassen-Mosaik ---------- */
+  function renderClass() {
+    var box = $('#class-body');
+    var n = pool.length;
+    if (!n) { box.innerHTML = ''; return; }
+    var presence = SP.map(function (_, i) { return pool.filter(function (c) { return c.p[i] > 0; }).length; });
+    var avg = SP.map(function (_, i) { return pool.reduce(function (s, c) { return s + c.p[i]; }, 0) / n * 100; });
+    var avgN = pool.reduce(function (s, c) { return s + c.n; }, 0) / n;
+    var tot = 0, pairs = 0, i, j, k, s;
+    for (i = 0; i < n; i++) for (j = i + 1; j < n; j++) {
+      s = 0; for (k = 0; k < SP.length; k++) s += Math.min(pool[i].p[k], pool[j].p[k]);
+      tot += s; pairs++;
+    }
+    var overlap = pairs ? tot / pairs * 100 : null;
+
+    var html = '';
+    if (n < 5) html += '<div class="card warn"><h3>Wenige Feeds</h3><p style="margin:0">Mit weniger als 5 Feeds kann man Einzelne leicht erraten, wenn bekannt ist, wer mitgemacht hat. Nutze das Bild nur als Beispiel und bespreche keine einzelnen Kinder.</p></div>';
+
+    html += '<div class="stat-grid"><div class="stat"><b>' + n + '</b><span>Feeds im Mosaik</span></div>';
+    html += '<div class="stat"><b>' + Math.round(avgN) + '</b><span>erfasste Videos pro Feed im Schnitt</span></div>';
+    if (overlap !== null) html += '<div class="stat"><b>' + Math.round(overlap) + ' %</b><span>Überschneidung zweier zufälliger Feeds (nach Sparte)</span></div>';
+    html += '</div>';
+
+    var pr = [];
+    SP.forEach(function (sp, q) { if (presence[q]) pr.push([sp[1], presence[q], pct(presence[q], n) + ' %']); });
+    pr.sort(function (x, y) { return y[1] - x[1]; });
+    html += '<div class="card"><h3>In wie vielen Feeds kommt die Sparte vor?</h3><p class="muted small">Jeder Feed zählt nur einmal pro Sparte. So kann niemand das Bild allein verschieben.</p>' + bars(pr, n) + '</div>';
+
+    var av = [];
+    SP.forEach(function (sp, q) { if (avg[q] > 0) av.push([sp[1], avg[q], Math.round(avg[q]) + ' %']); });
+    av.sort(function (x, y) { return y[1] - x[1]; });
+    html += '<div class="card"><h3>Durchschnittlicher Anteil im Feed</h3><p class="muted small">Jeder Feed wiegt gleich, egal wie viele Videos erfasst wurden.</p>' + bars(av, av[0][1], true) + '</div>';
+
+    if (overlap !== null) {
+      var txt;
+      if (overlap <= 35) txt = 'Eure Feeds unterscheiden sich stark. Jede und jeder von euch hat im Grunde eine eigene Version der Plattform.';
+      else if (overlap <= 55) txt = 'Eure Feeds überschneiden sich zum Teil, aber jeder Feed ist deutlich anders.';
+      else txt = 'Eure Feeds ähneln sich stark. Das kann an gemeinsamen Interessen liegen oder daran, dass die Plattform ähnlich sortiert.';
+      html += '<div class="card note"><h3>Was das zeigt</h3><p style="margin:0">' + txt + ' Die Sparten sind grob und die Angaben Selbstauskunft, deshalb ist das ein Gesprächsanlass und kein Messergebnis.</p></div>';
+    }
+    box.innerHTML = html;
+  }
+
+  function addCodes() {
+    var raw = $('#codes').value.split(/[\s,;]+/).filter(Boolean);
+    var ok = 0, bad = 0, dup = 0;
+    var seen = {};
+    pool.forEach(function (c) { seen[c.key] = 1; });
+    raw.forEach(function (r) {
+      var c = parseCode(r);
+      if (!c) { bad++; return; }
+      if (seen[c.key]) { dup++; return; }
+      seen[c.key] = 1; pool.push(c); ok++;
+    });
+    $('#codes').value = '';
+    var msg = ok + ' Code(s) gezählt.';
+    if (dup) msg += ' ' + dup + ' doppelt, übersprungen.';
+    if (bad) msg += ' ' + bad + ' ungültig, ignoriert.';
+    if (!raw.length) msg = 'Bitte zuerst Codes einfügen.';
+    $('#class-msg').textContent = msg;
+    renderClass();
+  }
+
+  function sampleClass() {
+    var seed = 20260101;
+    function rnd() { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }
+    pool = [];
+    for (var q = 0; q < 24; q++) {
+      var c = SP.map(function () { return 0; });
+      var len = 10 + Math.floor(rnd() * 31);
+      var favs = [Math.floor(rnd() * 12), Math.floor(rnd() * 12), Math.floor(rnd() * 12)];
+      for (var v = 0; v < len; v++) c[rnd() < 0.6 ? favs[Math.floor(rnd() * 3)] : Math.floor(rnd() * 13)]++;
+      pool.push(parseCode(makeCode(c, len)));
+    }
+    $('#class-msg').textContent = 'Beispielklasse mit 24 erfundenen Feeds geladen. Das sind keine echten Daten.';
+    renderClass();
+  }
+
+  /* ---------- Beispiel-Feed ---------- */
+  function demoFeed() {
+    var d = [
+      ['comedy', 'lustig', 'kam', 'ganz'], ['comedy', 'lustig', 'kam', 'mehr'], ['beauty', 'neid', 'kam', 'ganz'],
+      ['sport', 'neugierig', 'gesucht', 'ganz'], ['meinung', 'wut', 'kam', 'mehr'], ['comedy', 'lustig', 'kam', 'weg'],
+      ['werbung', 'egal', 'kam', 'weg'], ['beauty', 'unwohl', 'kam', 'ganz'], ['gaming', 'neugierig', 'gesucht', 'mehr'],
+      ['meinung', 'wut', 'kam', 'mehr']
+    ];
+    feed = d.map(function (r) { return { sp: r[0], em: r[1], hk: r[2], ak: r[3] }; });
+  }
+
+  /* ---------- Ereignisse ---------- */
+  function goCards() { idx = 0; resetTimer(); renderTimer(); renderCard(); show('screen-cards'); }
+  function goResult() { stopTimer(); renderResult(); show('screen-result'); }
+  var lastScreen = 'screen-start';
+  function remember() {
+    var s = document.querySelectorAll('.screen');
+    for (var i = 0; i < s.length; i++) if (!s[i].hidden && s[i].id !== 'screen-info') lastScreen = s[i].id;
+  }
+
+  $('#btn-start').addEventListener('click', function () { feed = emptyFeed(); goCards(); });
+  $('#btn-demo').addEventListener('click', function () { demoFeed(); goResult(); });
+  $('#btn-back').addEventListener('click', function () { if (idx > 0) { idx--; renderCard(); } });
+  $('#btn-next').addEventListener('click', function () {
+    if (!complete(feed[idx])) return;
+    if (idx === feed.length - 1) {
+      if (feed.length >= MAXV) return;
+      feed.push(emptyVideo());
+    }
+    idx++; renderCard(); window.scrollTo(0, 0);
+  });
+  $('#btn-eval').addEventListener('click', function () { if (doneCount() >= MIN) goResult(); });
+  $('#btn-del').addEventListener('click', function () {
+    if (feed.length > 1) { feed.splice(idx, 1); if (idx >= feed.length) idx = feed.length - 1; }
+    else feed[0] = emptyVideo();
+    renderCard();
+  });
+  $('#btn-timer').addEventListener('click', toggleTimer);
+  $('#time-chips').addEventListener('click', function (e) {
+    var b = e.target.closest('.chip'); if (!b) return;
+    timerLen = parseInt(b.getAttribute('data-t'), 10);
+    var all = document.querySelectorAll('#time-chips .chip');
+    for (var i = 0; i < all.length; i++) all[i].setAttribute('aria-pressed', String(all[i] === b));
+  });
+  $('#dots').addEventListener('click', function (e) {
+    var b = e.target.closest('.dot'); if (!b) return;
+    idx = parseInt(b.getAttribute('data-i'), 10); renderCard();
+  });
+  $('#card-body').addEventListener('click', function (e) {
+    var b = e.target.closest('.chip'); if (!b) return;
+    feed[idx][b.getAttribute('data-g')] = b.getAttribute('data-v');
+    renderCard();
+    var again = document.querySelector('.chip[aria-pressed="true"][data-g="' + b.getAttribute('data-g') + '"]');
+    if (again) again.focus({ preventScroll: true });
+  });
+  $('#btn-print').addEventListener('click', function () { window.print(); });
+  $('#btn-class-print').addEventListener('click', function () { window.print(); });
+  $('#btn-again').addEventListener('click', function () { feed = emptyFeed(); resetTimer(); show('screen-start'); });
+  $('#btn-to-class').addEventListener('click', function () { show('screen-class'); });
+  $('#btn-class-back').addEventListener('click', function () { show('screen-result'); });
+  $('#link-class').addEventListener('click', function () { show('screen-class'); });
+  $('#link-info').addEventListener('click', function () { remember(); show('screen-info'); });
+  $('#btn-info-back').addEventListener('click', function () { show(lastScreen); });
+  $('#btn-add').addEventListener('click', addCodes);
+  $('#btn-sample').addEventListener('click', sampleClass);
+  $('#btn-reset').addEventListener('click', function () { pool = []; $('#codes').value = ''; $('#class-msg').textContent = 'Alles zurückgesetzt.'; renderClass(); });
+  $('#result-body').addEventListener('click', function (e) {
+    if (e.target.id !== 'btn-copy') return;
+    var txt = $('#my-code').textContent, m = $('#copy-msg');
+    function sel() {
+      var r = document.createRange(); r.selectNodeContents($('#my-code'));
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      m.textContent = 'Code markiert. Kopiere ihn mit Strg+C oder halte ihn gedrückt.';
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(function () { m.textContent = 'Kopiert.'; }, sel);
+    } else sel();
+  });
+  $('#btn-theme').addEventListener('click', function () {
+    var root = document.documentElement;
+    var light = window.matchMedia('(prefers-color-scheme: light)').matches;
+    var cur = root.getAttribute('data-theme') || (light ? 'light' : 'dark');
+    root.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+  });
+
+  show('screen-start');
+  // Nur für automatisierte Tests: reine Funktionen lesbar machen, ohne Daten zu speichern.
+  window.__AS = { makeCode: makeCode, parseCode: parseCode };
+})();
+</script>
+</body>
+</html>
