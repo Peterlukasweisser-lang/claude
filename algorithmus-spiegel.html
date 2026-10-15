@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Algorithmus-Spiegel</title>
-<meta name="description" content="Ein Selbsttest für Klasse 7 und älter: Was hat dein Feed aus dir gemacht? Läuft komplett offline im Browser, speichert nichts und sendet nichts.">
+<meta name="description" content="Ein Reflexionstool für Klasse 7 und älter: Welche Muster erkennst du in deinem Feed? Läuft komplett offline im Browser, speichert nichts und sendet nichts.">
 <meta name="author" content="Peter Weißer">
 <style>
 /* =========================================================
@@ -180,9 +180,9 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
 
   <!-- START -->
   <section class="screen" id="screen-start" aria-labelledby="h-start">
-    <p class="eyebrow">Selbsttest · ab Klasse 7</p>
-    <h1 id="h-start" tabindex="-1">Was hat dein Feed aus dir gemacht?</h1>
-    <p class="lead">Du ordnest zehn Videos aus deinem eigenen Feed ein. Danach siehst du, welches Bild ein Algorithmus aus deinem Verhalten bauen würde.</p>
+    <p class="eyebrow">Reflexionstool · ab Klasse 7</p>
+    <h1 id="h-start" tabindex="-1">Welche Muster erkennst du in deinem Feed?</h1>
+    <p class="lead">Du ordnest Videos aus deinem eigenen Feed ein. Danach siehst du Muster und ein stark vereinfachtes Zählmodell dafür, wie ein Empfehlungssystem aus Signalen Interesse ableiten könnte. Es ist keine Messung, was dein Feed mit dir macht.</p>
 
     <div class="card privacy">
       <h3>Das bleibt auf deinem Gerät</h3>
@@ -213,7 +213,7 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
 
     <div class="btn-row">
       <button class="btn primary" type="button" id="btn-start">Los geht es</button>
-      <button class="btn" type="button" id="btn-demo">Ich habe kein Konto: Beispiel-Feed ansehen</button>
+      <button class="btn" type="button" id="btn-demo">Ich habe kein Konto: mit Beispiel-Feed ausprobieren</button>
     </div>
   </section>
 
@@ -254,7 +254,7 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
   <section class="screen" id="screen-class" aria-labelledby="h-class" hidden>
     <p class="eyebrow">Für die Lehrkraft</p>
     <h1 id="h-class" tabindex="-1">Klassen-Mosaik</h1>
-    <p class="lead">Aus den Klassencodes entsteht ein gemeinsames Bild. Einzelne Feeds siehst du nie. Jeder Feed zählt gleich viel, egal wie viele Videos erfasst wurden.</p>
+    <p class="lead">Aus den Klassencodes entsteht ein gemeinsames Bild. Gezeigt werden nur Gesamtwerte, und erst ab 3 Codes. Jeder Feed zählt gleich viel, egal wie viele Videos erfasst wurden.</p>
 
     <div class="card privacy">
       <h3>Datenschutz in dieser Ansicht</h3>
@@ -262,13 +262,14 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
         <li>Ein Code enthält nur die Anteile pro Sparte und die Zahl der erfassten Videos. Keine Gefühle, keine Namen, kein Text.</li>
         <li>Nach dem Auswerten wird das Eingabefeld sofort geleert. Gemerkt werden nur Zahlen im Speicher dieser Seite.</li>
         <li>Codes bitte ohne Namen und ohne Reihenfolge einsammeln, zum Beispiel an einem gemeinsamen Gerät eintippen lassen.</li>
+        <li>Ein einzelner Code ist lesbar: Wer ihn kennt, sieht das Spartenprofil dieses Feeds. Deshalb Codes ohne Namen einsammeln und das Mosaik erst bei einer größeren Gruppe nutzen.</li>
         <li>Kein Kind wird gezwungen. Wer keinen Code abgibt, fehlt im Bild, mehr nicht.</li>
       </ul>
     </div>
 
     <div class="card">
       <label for="codes"><h3>Klassencodes einfügen (einer pro Zeile)</h3></label>
-      <textarea id="codes" placeholder="AS2-…" spellcheck="false" autocomplete="off"></textarea>
+      <textarea id="codes" placeholder="AS3-…" spellcheck="false" autocomplete="off"></textarea>
       <div class="btn-row">
         <button class="btn primary" type="button" id="btn-add">Auswerten</button>
         <button class="btn" type="button" id="btn-sample">Beispielklasse laden (erfundene Daten)</button>
@@ -291,8 +292,8 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
       <h3>Was die Zahlen bedeuten</h3>
       <ul class="small">
         <li><b>Schwerpunkt:</b> Anteil der Videos pro Sparte unter allen, die du erfasst hast. Ab 40 % heißt es Schwerpunkt, ab 30 % Tendenz.</li>
-        <li><b>Was dich festhält:</b> „Ganz geschaut“ zählt 1 Punkt, „nochmal, geliked, geteilt oder gespeichert“ zählt 2 Punkte, „weitergewischt“ zählt 0. Das ist ein einfaches Modell der Signale, die Empfehlungssysteme in der Regel auswerten. Wie eine konkrete Plattform gewichtet, ist nicht öffentlich.</li>
-        <li><b>Vielfalt:</b> Normalisierte Shannon-Entropie über die Sparten deiner Videos. 100 % hieße: die Videos verteilen sich so breit wie möglich (höchstens 13 Sparten). 0 % hieße: alle aus derselben.</li>
+        <li><b>Was dich festhält:</b> „Ganz geschaut“ zählt 1 Punkt, „nochmal, geliked, geteilt oder gespeichert“ zählt 2 Punkte, „weitergewischt“ zählt 0 Punkte für Interesse. Das ist ein stark vereinfachtes Zählmodell. Auch Weiterwischen ist ein Signal und wird deshalb gesondert gezeigt. Wie eine konkrete Plattform Signale gewichtet, ist nicht öffentlich.</li>
+        <li><b>Themenvielfalt:</b> Normalisierte Shannon-Entropie über die Sparten deiner Videos. 100 % hieße: die Videos verteilen sich so breit wie möglich (höchstens 13 Sparten). 0 % hieße: alle aus derselben. Das sagt nichts darüber, ob verschiedene Meinungen, Quellen oder Perspektiven vorkommen.</li>
         <li><b>Starke Gefühle:</b> Neid oder Vergleich, Wut, Angst und Unwohlsein zusammen.</li>
       </ul>
     </div>
@@ -361,7 +362,7 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
 
   /* ---------- Zustand (nur im Speicher) ---------- */
   var feed, idx, pool = [];
-  var timerLen = 300, timerLeft = 0, timerId = null, ranOnce = false;
+  var timerLen = 300, timerLeft = 0, timerId = null, ranOnce = false, demo = false;
   function emptyVideo() { return { sp: null, em: null, hk: null, ak: null }; }
   function emptyFeed() { return [emptyVideo()]; }
   feed = emptyFeed(); idx = 0;
@@ -394,7 +395,7 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
   /* ---------- Karten ---------- */
   function renderCard() {
     var v = feed[idx], done = doneCount();
-    $('#card-eyebrow').textContent = 'Video ' + (idx + 1) + ' · erfasst: ' + done;
+    $('#card-eyebrow').textContent = (demo ? 'Beispiel-Feed (erfunden) · ' : '') + 'Video ' + (idx + 1) + ' · erfasst: ' + done;
     var prog = Math.min(done, MIN);
     $('#progress-fill').style.width = (prog / MIN * 100) + '%';
     $('#progress').setAttribute('aria-valuenow', String(prog));
@@ -432,8 +433,8 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
   function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
   function renderTimer() {
     var bar = $('#timerbar');
-    bar.hidden = !timerLen;
-    if (!timerLen) return;
+    bar.hidden = !timerLen || demo;
+    if (!timerLen || demo) return;
     var t = $('#timer-time');
     t.textContent = fmt(ranOnce ? timerLeft : timerLen);
     t.classList.toggle('over', ranOnce && timerLeft === 0);
@@ -461,10 +462,11 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
     var counts = SP.map(function () { return 0; });
     var score = SP.map(function () { return 0; });
     var emc = {}; EM.forEach(function (e) { emc[e[0]] = 0; });
-    var kam = 0, strong = 0;
+    var kam = 0, strong = 0, skip = SP.map(function () { return 0; });
     f.forEach(function (v) {
       var i = SP.findIndex(function (s) { return s[0] === v.sp; });
       counts[i]++; score[i] += SCORE[v.ak];
+      if (v.ak === 'weg') skip[i]++;
       emc[v.em]++;
       if (v.hk === 'kam') kam++;
       if (STRONG[v.em]) strong++;
@@ -472,7 +474,7 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
     var H = 0;
     counts.forEach(function (c) { if (c) { var p = c / f.length; H -= p * Math.log(p); } });
     var diversity = Math.round(H / Math.log(Math.min(f.length, SP.length)) * 100);
-    return { counts: counts, score: score, emc: emc, kam: kam, strong: strong, diversity: diversity };
+    return { counts: counts, score: score, skip: skip, emc: emc, kam: kam, strong: strong, diversity: diversity };
   }
 
   function topIdx(arr) {
@@ -495,10 +497,10 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
     var share = maxCount / N;
     if (share >= 0.4) {
       headline = 'Schwerpunkt: ' + main;
-      sub = maxCount + ' von ' + N + ' Videos (' + pct(maxCount, N) + ' %) kamen aus dieser Sparte. Das ist mehr als ein Zufallsmix.';
+      sub = maxCount + ' von ' + N + ' Videos (' + pct(maxCount, N) + ' %) kamen aus dieser Sparte. Ob dein Interesse oder die Plattform dahintersteckt, kann dieses Tool nicht unterscheiden.';
     } else if (share >= 0.3) {
       headline = 'Tendenz: ' + main;
-      sub = maxCount + ' von ' + N + ' Videos (' + pct(maxCount, N) + ' %). Ein Muster zeichnet sich ab, ist aber noch nicht fest.';
+      sub = maxCount + ' von ' + N + ' Videos (' + pct(maxCount, N) + ' %). Ein Muster zeichnet sich ab, ist aber bei so wenigen Videos nicht fest.';
     } else {
       headline = 'Bunt gemischt';
       sub = 'Keine Sparte kommt auf 30 % der Videos. Dein Feed ist in dieser Stichprobe breit.';
@@ -512,14 +514,14 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
     html += '<div class="card"><h3>Deine ' + N + ' Videos nach Sparte</h3>' + bars(seen, maxCount) + '</div>';
 
     var totalScore = a.score.reduce(function (x, y) { return x + y; }, 0);
-    html += '<div class="card"><h3>Was dich festgehalten hat</h3>';
+    html += '<div class="card"><h3>Was dich festgehalten hat und was nicht</h3>';
     if (totalScore === 0) {
-      html += '<p class="muted">Du hast alles weitergewischt. Der Algorithmus hätte aus deinem Verhalten kaum etwas gelernt. Das ist selten, und es zeigt, wie viel Gewicht das Dranbleiben hat.</p>';
+      html += '<p class="muted">Du hast alles weitergewischt, deshalb zeigt sich in diesem Zählmodell kein Interesse. Auch Weiterwischen ist ein Signal: Es kann einem System zeigen, was dich nicht hält.</p>';
     } else {
       var sc = [];
       SP.forEach(function (s, i) { if (a.score[i]) sc.push([s[1], a.score[i], a.score[i]]); });
       sc.sort(function (x, y) { return y[1] - x[1]; });
-      html += '<p class="muted small">Ganz geschaut zählt 1, nochmal, geliked, geteilt oder gespeichert zählt 2. So ungefähr sieht ein Empfehlungssystem dein Interesse.</p>' + bars(sc, Math.max.apply(null, a.score), true);
+      html += '<p class="muted small">Ganz geschaut zählt 1, nochmal, geliked, geteilt oder gespeichert zählt 2. Das ist ein stark vereinfachtes Zählmodell. Echte Systeme werten mehr Signale aus und gewichten anders.</p>' + bars(sc, Math.max.apply(null, a.score), true);
       var same = topScore.some(function (i) { return topSeen.indexOf(i) !== -1; });
       if (same) {
         html += '<p>Was du am häufigsten siehst, hält dich auch fest. Der Algorithmus hat damit leichtes Spiel, dir mehr davon zu zeigen.</p>';
@@ -528,13 +530,21 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
           topScore.map(function (i) { return SP[i][1]; }).join(' und ') + '). Für die nächsten Empfehlungen zählt vermutlich Letzteres.</p>';
       }
     }
+    var skipTotal = a.skip.reduce(function (x, y) { return x + y; }, 0);
+    if (skipTotal) {
+      var sk = [];
+      SP.forEach(function (sp, q) { if (a.skip[q]) sk.push([sp[1], a.skip[q], a.skip[q]]); });
+      sk.sort(function (x, y) { return y[1] - x[1]; });
+      html += '<h3 style="margin-top:1rem">Was du weitergewischt hast</h3>' + bars(sk, Math.max.apply(null, a.skip));
+    }
     html += '</div>';
 
     html += '<div class="card"><h3>Gesucht oder einfach gekommen?</h3><div class="meter" role="img" aria-label="' + a.kam + ' von ' + N +
       ' Videos kamen einfach so"><div style="width:' + pct(a.kam, N) + '%"></div></div><p><b>' + a.kam + ' von ' + N + '</b> Videos hast du nicht gesucht.';
     if (a.kam / N >= 0.8) html += ' Fast alles hat die Plattform für dich ausgewählt.';
-    else if (a.kam / N >= 0.5) html += ' Mehr als die Hälfte hat die Plattform für dich ausgewählt.';
-    else html += ' Du steuerst deinen Feed stark selbst, etwa über Abos oder Suche.';
+    else if (a.kam * 2 > N) html += ' Mehr als die Hälfte hat die Plattform für dich ausgewählt.';
+    else if (a.kam * 2 === N) html += ' Genau die Hälfte hat die Plattform für dich ausgewählt.';
+    else html += ' Mehr als die Hälfte hast du selbst gesucht oder abonniert.';
     html += '</p></div>';
 
     var ems = [];
@@ -550,8 +560,8 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
     html += '</div>';
 
     var dl = a.diversity >= 80 ? 'breit' : (a.diversity >= 50 ? 'mittel' : 'schmal');
-    html += '<div class="card"><h3>Vielfalt deines Feeds <span class="pill">' + dl + ' · ' + a.diversity + ' %</span></h3><div class="meter" role="img" aria-label="Vielfalt ' + a.diversity +
-      ' Prozent"><div style="width:' + a.diversity + '%"></div></div><p class="muted small" style="margin:0">100 % hieße: die Videos verteilen sich so breit wie möglich. Das ist ein grobes Maß und kein Urteil.</p></div>';
+    html += '<div class="card"><h3>Themenvielfalt deines Feeds <span class="pill">' + dl + ' · ' + a.diversity + ' %</span></h3><div class="meter" role="img" aria-label="Themenvielfalt ' + a.diversity +
+      ' Prozent"><div style="width:' + a.diversity + '%"></div></div><p class="muted small" style="margin:0">Gemeint ist nur die Verteilung auf Sparten, 100 % hieße so breit wie möglich. Das sagt nichts darüber, ob verschiedene Meinungen, Quellen oder Perspektiven vorkommen.</p></div>';
 
     html += '<div class="card warn"><h3>Wie viel sagt das aus?</h3><p style="margin:0">' + N + ' Videos, von dir selbst eingeordnet. Das ist ein Schnappschuss, kein Beweis. Frag dich: Wie würde das Ergebnis morgen aussehen? Was hast du vielleicht weggelassen oder anders bewertet, weil es dir peinlich war?</p></div>';
 
@@ -563,31 +573,38 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
       '<textarea id="reflect" style="font-family:var(--font);min-height:90px" spellcheck="true"></textarea></div>';
 
     var code = makeCode(a.counts, N);
-    html += '<div class="card no-print"><h3>Klassencode (freiwillig)</h3><p class="small muted">Der Code enthält nur, welchen Anteil deiner Videos zu welcher Sparte gehörten. Keine Gefühle, keine Namen. Gib ihn nur ab, wenn du magst.</p>' +
+    if (demo) html += '<div class="card note no-print"><h3>Beispiel-Feed</h3><p class="small" style="margin:0">Das sind erfundene Daten. Deshalb gibt es hier keinen Klassencode.</p></div>';
+    else html += '<div class="card no-print"><h3>Klassencode (freiwillig)</h3><p class="small muted">Der Code enthält nur, welchen Anteil deiner Videos zu welcher Sparte gehörten. Keine Gefühle, keine Namen. Wer den Code kennt, kann das Spartenprofil deines Feeds lesen. Gib ihn nur ab, wenn du magst, und nie mit Namen.</p>' +
       '<div class="code-box" id="my-code">' + code + '</div><div class="btn-row"><button class="btn" type="button" id="btn-copy">Code kopieren</button></div><p class="msg" id="copy-msg" role="status"></p></div>';
 
     $('#result-body').innerHTML = html;
   }
 
   /* ---------- Klassencode ---------- */
-  // Format: AS2-<13 Anteile 0-Z>-<Anzahl Videos, 2 Zeichen>-<Prüfsumme, 2 Zeichen>
+  // Format: AS3-<13 Anteile 0-Z>-<Anzahl Videos, 2 Zeichen>-<Zufallszeichen, 2 Zeichen>-<Prüfsumme, 2 Zeichen>
+  // Die Zufallszeichen sorgen dafür, dass zwei Feeds mit gleichem Profil nicht denselben Code bekommen.
   function b36(n, len) { var t = n.toString(36).toUpperCase(); while (t.length < len) t = '0' + t; return t; }
-  function checksum(sh, n) {
-    var s = n * 17;
+  function rand1296() {
+    if (window.crypto && window.crypto.getRandomValues) { var a = new Uint16Array(1); window.crypto.getRandomValues(a); return a[0] % 1296; }
+    return Math.floor(Math.random() * 1296);
+  }
+  function checksum(sh, n, nonce) {
+    var s = n * 17 + nonce * 7;
     sh.forEach(function (c, i) { s += c * (i + 3); });
     return b36(s % 1296, 2);
   }
   function makeCode(counts, n) {
     var sh = counts.map(function (c) { return c ? Math.max(1, Math.round(c / n * SCALE)) : 0; });
-    return 'AS2-' + sh.map(function (c) { return c.toString(36).toUpperCase(); }).join('') + '-' + b36(n, 2) + '-' + checksum(sh, n);
+    var nonce = rand1296();
+    return 'AS3-' + sh.map(function (c) { return c.toString(36).toUpperCase(); }).join('') + '-' + b36(n, 2) + '-' + b36(nonce, 2) + '-' + checksum(sh, n, nonce);
   }
   function parseCode(raw) {
-    var m = /^AS2-([0-9A-Z]{13})-([0-9A-Z]{2})-([0-9A-Z]{2})$/.exec(raw.trim().toUpperCase());
+    var m = /^AS3-([0-9A-Z]{13})-([0-9A-Z]{2})-([0-9A-Z]{2})-([0-9A-Z]{2})$/.exec(raw.trim().toUpperCase());
     if (!m) return null;
     var sh = m[1].split('').map(function (ch) { return parseInt(ch, 36); });
-    var n = parseInt(m[2], 36);
+    var n = parseInt(m[2], 36), nonce = parseInt(m[3], 36);
     var sum = sh.reduce(function (x, y) { return x + y; }, 0);
-    if (sh.some(function (c) { return c > SCALE; }) || n < MIN || n > MAXV || sum === 0 || checksum(sh, n) !== m[3]) return null;
+    if (sh.some(function (c) { return c > SCALE; }) || n < MIN || n > MAXV || sum === 0 || checksum(sh, n, nonce) !== m[4]) return null;
     return { key: m[0], n: n, p: sh.map(function (c) { return c / sum; }) };
   }
 
@@ -607,6 +624,10 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
     var overlap = pairs ? tot / pairs * 100 : null;
 
     var html = '';
+    if (n < 3) {
+      box.innerHTML = '<div class="stat-grid"><div class="stat"><b>' + n + '</b><span>Feeds im Mosaik</span></div></div><div class="card warn"><h3>Noch zu wenige Codes</h3><p style="margin:0">Unter 3 Codes würde das Bild einen einzelnen Feed zeigen. Das Mosaik erscheint ab 3 Codes.</p></div>';
+      return;
+    }
     if (n < 5) html += '<div class="card warn"><h3>Wenige Feeds</h3><p style="margin:0">Mit weniger als 5 Feeds kann man Einzelne leicht erraten, wenn bekannt ist, wer mitgemacht hat. Nutze das Bild nur als Beispiel und bespreche keine einzelnen Kinder.</p></div>';
 
     html += '<div class="stat-grid"><div class="stat"><b>' + n + '</b><span>Feeds im Mosaik</span></div>';
@@ -689,8 +710,8 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
     for (var i = 0; i < s.length; i++) if (!s[i].hidden && s[i].id !== 'screen-info') lastScreen = s[i].id;
   }
 
-  $('#btn-start').addEventListener('click', function () { feed = emptyFeed(); goCards(); });
-  $('#btn-demo').addEventListener('click', function () { demoFeed(); goResult(); });
+  $('#btn-start').addEventListener('click', function () { demo = false; feed = emptyFeed(); goCards(); });
+  $('#btn-demo').addEventListener('click', function () { demoFeed(); demo = true; goCards(); $('#card-msg').textContent = 'Das ist ein erfundener Beispiel-Feed. Sieh dir die Einordnungen an, ändere sie oder lösche Videos, und wähle dann „Auswerten“.'; });
   $('#btn-back').addEventListener('click', function () { if (idx > 0) { idx--; renderCard(); } });
   $('#btn-next').addEventListener('click', function () {
     if (!complete(feed[idx])) return;
@@ -726,10 +747,22 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
   });
   $('#btn-print').addEventListener('click', function () { window.print(); });
   $('#btn-class-print').addEventListener('click', function () { window.print(); });
-  $('#btn-again').addEventListener('click', function () { feed = emptyFeed(); resetTimer(); show('screen-start'); });
-  $('#btn-to-class').addEventListener('click', function () { show('screen-class'); });
-  $('#btn-class-back').addEventListener('click', function () { show('screen-result'); });
-  $('#link-class').addEventListener('click', function () { show('screen-class'); });
+  $('#btn-again').addEventListener('click', function () { demo = false; feed = emptyFeed(); resetTimer(); show('screen-start'); });
+  var classFrom = 'screen-start';
+  function visibleId() {
+    var all = document.querySelectorAll('.screen');
+    for (var i = 0; i < all.length; i++) if (!all[i].hidden) return all[i].id;
+    return 'screen-start';
+  }
+  function openClass() {
+    var v = visibleId();
+    if (v === 'screen-info') v = lastScreen;
+    if (v !== 'screen-class') classFrom = v;
+    show('screen-class');
+  }
+  $('#btn-to-class').addEventListener('click', openClass);
+  $('#btn-class-back').addEventListener('click', function () { show(classFrom); });
+  $('#link-class').addEventListener('click', openClass);
   $('#link-info').addEventListener('click', function () { remember(); show('screen-info'); });
   $('#btn-info-back').addEventListener('click', function () { show(lastScreen); });
   $('#btn-add').addEventListener('click', addCodes);
