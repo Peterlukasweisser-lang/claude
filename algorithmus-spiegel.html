@@ -194,7 +194,7 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
       <ol>
         <li>Öffne auf einem zweiten Gerät deinen Feed (TikTok, Instagram Reels, YouTube Shorts, was du nutzt).</li>
         <li>Schau dir deinen Feed an, wie du es sonst auch tust. Wische nicht gezielt weiter, um etwas Bestimmtes zu finden.</li>
-        <li>Trage jedes Video hier ein: Worum ging es, was hat es mit dir gemacht, woher kam es, was hast du getan.</li>
+        <li>Trage jedes Video hier ein, <b>in der Reihenfolge, in der sie kamen</b>: Worum ging es, was hat es mit dir gemacht, woher kam es, was hast du getan.</li>
         <li>Ab zehn Videos kannst du auswerten. Nach oben gibt es kaum eine Grenze, maximal 60. Je mehr, desto genauer das Bild.</li>
       </ol>
       <p class="small muted" style="margin:0">Je ehrlicher du bist, desto besser passt das Bild. Niemand bewertet dich, die Antworten sieht nur dein Gerät.</p>
@@ -293,6 +293,8 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
       <ul class="small">
         <li><b>Schwerpunkt:</b> Anteil der Videos pro Sparte unter allen, die du erfasst hast. Ab 40 % heißt es Schwerpunkt, ab 30 % Tendenz.</li>
         <li><b>Was dich festhält:</b> „Ganz geschaut“ zählt 1 Punkt, „nochmal, geliked, geteilt oder gespeichert“ zählt 2 Punkte, „weitergewischt“ zählt 0 Punkte für Interesse. Das ist ein stark vereinfachtes Zählmodell. Auch Weiterwischen ist ein Signal und wird deshalb gesondert gezeigt. Wie eine konkrete Plattform Signale gewichtet, ist nicht öffentlich.</li>
+        <li><b>Vorhersage-Check:</b> Ab dem fünften Video rät der Spiegel die Sparte des nächsten Videos aus den Videos davor. Jedes frühere Video zählt mit seinem Signal (weitergewischt 0,5, ganz geschaut 1, nochmal oder geteilt 2) und verliert pro Schritt zurück 10 % Gewicht. Verglichen wird mit Raten unter den Sparten, die in deinem Feed überhaupt vorkommen, und mit „immer die bisher häufigste Sparte“. Das Modell erkennt nur Häufigkeiten, keine festen Reihenfolgen. Ein schmaler Feed ist leicht zu raten. Das Tool weist darauf hin, wenn das Modell nicht besser ist als dieser Vergleich. Eine Vorschau zeigt das Tool nur, wenn mindestens 45 % der Videos unter den 3 wahrscheinlichsten Sparten lagen.</li>
+        <li><b>Verlauf:</b> Ab 12 Videos wird die erste mit der zweiten Hälfte verglichen. Das ist ein Stellvertreter für „wird der Feed enger?“. Wie weit der Algorithmus deines Kontos tatsächlich festgelegt ist, kann das Tool nicht messen.</li>
         <li><b>Themenvielfalt:</b> Normalisierte Shannon-Entropie über die Sparten deiner Videos. 100 % hieße: die Videos verteilen sich so breit wie möglich (höchstens 13 Sparten). 0 % hieße: alle aus derselben. Das sagt nichts darüber, ob verschiedene Meinungen, Quellen oder Perspektiven vorkommen.</li>
         <li><b>Starke Gefühle:</b> Neid oder Vergleich, Wut, Angst und Unwohlsein zusammen.</li>
       </ul>
@@ -477,6 +479,114 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
     return { counts: counts, score: score, skip: skip, emc: emc, kam: kam, strong: strong, diversity: diversity };
   }
 
+  /* ---------- Vorhersage-Check und Verlauf ---------- */
+  // Stark vereinfachtes Zählmodell, kein Abbild einer echten Plattform.
+  var HIST_MIN = 4, DECAY = 0.9, WGT = { weg: 0.5, ganz: 1, mehr: 2 };
+  function spIdx(key) { return SP.findIndex(function (x) { return x[0] === key; }); }
+  function ranking(hist) {
+    var sc = SP.map(function () { return 0; }), last = SP.map(function () { return -1; });
+    hist.forEach(function (v, i) {
+      var k = spIdx(v.sp);
+      sc[k] += WGT[v.ak] * Math.pow(DECAY, hist.length - 1 - i);
+      last[k] = i;
+    });
+    var order = SP.map(function (_, i) { return i; }).filter(function (i) { return sc[i] > 0; });
+    order.sort(function (x, y) { return (sc[y] - sc[x]) || (last[y] - last[x]); });
+    var sum = sc.reduce(function (x, y) { return x + y; }, 0);
+    return { order: order, share: sc.map(function (c) { return sum ? c / sum : 0; }) };
+  }
+  function naiveTop(hist) {
+    var c = SP.map(function () { return 0; }), last = SP.map(function () { return -1; });
+    hist.forEach(function (v, i) { var k = spIdx(v.sp); c[k]++; last[k] = i; });
+    var best = 0;
+    SP.forEach(function (_, i) { if (c[i] > c[best] || (c[i] === c[best] && last[i] > last[best])) best = i; });
+    return best;
+  }
+  function backtest(f) {
+    var targets = [];
+    for (var t = HIST_MIN; t < f.length; t++) targets.push(t);
+    var kamT = targets.filter(function (t) { return f[t].hk === 'kam'; });
+    var onlyKam = kamT.length >= 6;
+    if (onlyKam) targets = kamT;
+    var hit1 = 0, hit3 = 0, naive = 0;
+    targets.forEach(function (t) {
+      var hist = f.slice(0, t), actual = spIdx(f[t].sp), r = ranking(hist).order;
+      if (r[0] === actual) hit1++;
+      if (r.slice(0, 3).indexOf(actual) !== -1) hit3++;
+      if (naiveTop(hist) === actual) naive++;
+    });
+    var used = {};
+    f.forEach(function (v) { used[v.sp] = 1; });
+    var k = Math.max(1, Object.keys(used).length);
+    return { tot: targets.length, hit1: hit1, hit3: hit3, naive: naive, onlyKam: onlyKam, k: k,
+      chance1: targets.length / k, chance3: targets.length * Math.min(1, 3 / k) };
+  }
+  function concentration(arr) {
+    var c = SP.map(function () { return 0; });
+    arr.forEach(function (v) { c[spIdx(v.sp)]++; });
+    c.sort(function (x, y) { return y - x; });
+    return (c[0] + c[1]) / arr.length;
+  }
+  function trend(f) {
+    var n = f.length;
+    if (n < 12) return null;
+    var h = Math.floor(n / 2), a = f.slice(0, h), b = f.slice(n - h);
+    var out = { c1: concentration(a), c2: concentration(b), h: h, early: null };
+    var sc = SP.map(function () { return 0; });
+    a.forEach(function (v) { sc[spIdx(v.sp)] += SCORE[v.ak]; });
+    var m = Math.max.apply(null, sc);
+    var tops = sc.map(function (v, i) { return v === m ? i : -1; }).filter(function (i) { return i >= 0; });
+    if (m > 0 && tops.length === 1) {
+      var k = tops[0];
+      out.early = { k: k,
+        p1: a.filter(function (v) { return spIdx(v.sp) === k; }).length / h,
+        p2: b.filter(function (v) { return spIdx(v.sp) === k; }).length / h };
+    }
+    return out;
+  }
+  function predictionCard(f) {
+    var bt = backtest(f), html = '<div class="card"><h3>Wie vorhersehbar ist dein Feed?</h3>';
+    html += '<p class="muted small">Der Spiegel hat der Reihe nach geraten, aus welcher Sparte das nächste Video kommt, und zwar nur aus den Videos davor' +
+      (bt.onlyKam ? ' (gezählt sind die Videos, die du nicht gesucht hast)' : '') + '. Dann hat er mit dem echten Video verglichen.</p>';
+    function r1(x) { return (Math.round(x * 10) / 10).toString().replace('.', ','); }
+    html += '<div class="stat-grid">' +
+      '<div class="stat"><b>' + bt.hit1 + ' von ' + bt.tot + '</b><span>richtig geraten (1 Sparte)</span></div>' +
+      '<div class="stat"><b>' + bt.hit3 + ' von ' + bt.tot + '</b><span>richtig unter den 3 wahrscheinlichsten Sparten</span></div>' +
+      '<div class="stat"><b>' + bt.naive + ' von ' + bt.tot + '</b><span>richtig bei „immer die bisher häufigste Sparte“</span></div>' +
+      '<div class="stat"><b>etwa ' + r1(bt.chance1) + ' / ' + r1(bt.chance3) + '</b><span>erwartet bei Raten unter den ' + bt.k + ' Sparten, die in deinem Feed vorkommen (1 / 3 Sparten)</span></div></div>';
+    var rate3 = bt.hit3 / bt.tot, level;
+    if (rate3 >= 0.7) level = 'hoch'; else if (rate3 >= 0.45) level = 'teils'; else level = 'niedrig';
+    var narrow = bt.hit3 <= bt.chance3 * 1.15;
+    if (level === 'hoch') html += '<p><b>Dein Feed war in dieser Stichprobe gut vorhersehbar.</b> Aus dem, was vorher kam und was dich festhielt, ließ sich meist erraten, was als Nächstes kommt.</p>';
+    else if (level === 'teils') html += '<p><b>Dein Feed war teilweise vorhersehbar.</b> Es gibt ein Muster, aber auch viele Überraschungen.</p>';
+    else html += '<p><b>Dein Feed war in dieser Stichprobe kaum vorhersehbar.</b> Das Zählmodell war nicht viel besser als Raten.</p>';
+    if (level !== 'niedrig' && narrow) html += '<p>Allerdings war das Modell nicht besser als Raten unter deinen ' + bt.k + ' Sparten. Die Vorhersehbarkeit kommt hier vor allem daher, dass dein Feed schmal ist. Feste Reihenfolgen erkennt das Modell nicht, nur Häufigkeiten.</p>';
+    if (level !== 'niedrig') {
+      var rk = ranking(f), top = rk.order.slice(0, 3);
+      html += '<p>Wenn sich das Muster fortsetzt, erwartet das Modell in den nächsten Videos am ehesten: <b>' +
+        top.map(function (i) { return SP[i][1] + ' (' + Math.round(rk.share[i] * 100) + ' %)'; }).join(', ') +
+        '</b>. Die Prozentwerte sind Gewichte im Modell, keine Wahrscheinlichkeiten.</p>';
+    } else html += '<p class="muted">Für eine Vorschau auf die nächsten Videos reicht das nicht.</p>';
+    html += '<p class="small muted" style="margin:0">Das ist ein einfaches Zählmodell auf deinen eigenen Angaben, nicht der Algorithmus der Plattform. Mit wenigen Videos schwanken die Zahlen stark.</p></div>';
+    return html;
+  }
+  function trendCard(f) {
+    var t = trend(f), html = '<div class="card"><h3>Wird dein Feed enger?</h3>';
+    if (!t) return html + '<p class="muted" style="margin:0">Für einen Verlauf braucht es mindestens 12 Videos. Je länger du schaust, desto mehr zeigt sich.</p></div>';
+    var d = t.c2 - t.c1, p1 = Math.round(t.c1 * 100), p2 = Math.round(t.c2 * 100);
+    html += '<p>Die zwei häufigsten Sparten machen in der <b>ersten Hälfte ' + p1 + ' %</b> deiner Videos aus, in der <b>zweiten Hälfte ' + p2 + ' %</b>.</p>';
+    if (d >= 0.15) html += '<p><b>Dein Feed wird enger.</b> Gegen Ende drehte sich mehr um weniger Themen.</p>';
+    else if (d <= -0.15) html += '<p><b>Dein Feed wird breiter.</b> Gegen Ende kam mehr Abwechslung.</p>';
+    else html += '<p><b>Keine klare Richtung.</b> Der Unterschied ist kleiner als 15 Prozentpunkte.</p>';
+    if (t.early) {
+      var e = t.early, q1 = Math.round(e.p1 * 100), q2 = Math.round(e.p2 * 100), mv = e.p2 - e.p1;
+      html += '<p>Was dich in der ersten Hälfte am meisten festhielt, war <b>' + SP[e.k][1] + '</b>. Sein Anteil: ' + q1 + ' % in der ersten, ' + q2 + ' % in der zweiten Hälfte' +
+        (mv >= 0.1 ? ' (gestiegen).' : (mv <= -0.1 ? ' (gesunken).' : ' (etwa gleich).')) + '</p>';
+    }
+    html += '<p class="small muted" style="margin:0">Das zeigt eine Richtung, aber keine Ursache: Ob die Plattform verengt oder du selbst gezielt weitergeschaut hast, kann dieses Tool nicht trennen. Wie weit der Algorithmus deines Kontos tatsächlich schon festgelegt ist, lässt sich so nicht messen.</p></div>';
+    return html;
+  }
+
   function topIdx(arr) {
     var m = Math.max.apply(null, arr);
     var r = [];
@@ -538,6 +648,8 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
       html += '<h3 style="margin-top:1rem">Was du weitergewischt hast</h3>' + bars(sk, Math.max.apply(null, a.skip));
     }
     html += '</div>';
+
+    html += predictionCard(f) + trendCard(f);
 
     html += '<div class="card"><h3>Gesucht oder einfach gekommen?</h3><div class="meter" role="img" aria-label="' + a.kam + ' von ' + N +
       ' Videos kamen einfach so"><div style="width:' + pct(a.kam, N) + '%"></div></div><p><b>' + a.kam + ' von ' + N + '</b> Videos hast du nicht gesucht.';
@@ -789,7 +901,7 @@ footer button { color: var(--accent); cursor: pointer; text-decoration: underlin
 
   show('screen-start');
   // Nur für automatisierte Tests: reine Funktionen lesbar machen, ohne Daten zu speichern.
-  window.__AS = { makeCode: makeCode, parseCode: parseCode };
+  window.__AS = { makeCode: makeCode, parseCode: parseCode, backtest: backtest, trend: trend, ranking: ranking };
 })();
 </script>
 </body>
