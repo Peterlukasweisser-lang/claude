@@ -58,12 +58,26 @@
   label.check{display:flex;gap:12px;align-items:flex-start;min-height:44px;margin-top:8px}
   label.check input{width:26px;height:26px;flex:none;margin-top:2px}
 
-  /* Spiel-Ansicht */
-  #player{position:fixed;inset:0;background:#111827;display:flex;flex-direction:column;z-index:10}
-  #bar{display:flex;gap:8px;padding:8px;background:#111827;align-items:center;flex-wrap:wrap}
-  #bar button{min-height:44px;padding:6px 14px;font-size:16px}
+  /* Fenster */
+  .win{background:var(--card);border:3px solid var(--text);border-radius:18px;margin-top:18px;overflow:hidden;box-shadow:0 5px 0 rgba(31,41,55,.18)}
+  .win-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 14px;color:#fff}
+  .win-head h2{margin:0;font-size:21px;flex:1 1 150px;min-width:0}
+  .win-head button{min-height:44px;padding:6px 14px;font-size:16px;border-color:#fff}
+  .badge{flex:none;width:40px;height:40px;border-radius:50%;background:#fff;color:var(--text);font-weight:800;font-size:22px;display:flex;align-items:center;justify-content:center}
+  .win-body{padding:14px}
+  #winCode .win-head{background:var(--blue)}
+  #winPlay .win-head{background:var(--go)}
+  #winCode textarea{border-style:dashed;border-width:3px;border-color:var(--blue);margin-top:12px}
+  .arrow{text-align:center;font-size:34px;line-height:1;margin:10px 0 -8px}
+  #stage{position:relative;height:440px;background:#f3f4f6}
+  #frame{width:100%;height:100%;border:0;background:#fff;display:block}
+  #empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:16px;color:var(--muted);font-weight:600}
+  #empty .big-emoji{font-size:56px;line-height:1.1}
+  #winPlay.on #empty{display:none}
+  #winPlay:not(.on) #frame{visibility:hidden}
   #err{margin:0;border-radius:0;border-width:0 0 3px 0}
-  #frame{flex:1 1 auto;width:100%;border:0;background:#fff;min-height:0}
+  #winPlay.big{position:fixed;inset:0;z-index:10;margin:0;border-radius:0;border-width:0;display:flex;flex-direction:column}
+  #winPlay.big #stage{flex:1 1 auto;height:auto;min-height:0}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}button:active{transform:none}}
 </style>
 </head>
@@ -71,33 +85,46 @@
 
 <main id="editor">
   <h1>🎮 Code-Spielplatz</h1>
-  <p>Hier kannst du deinen eigenen Code ausprobieren.</p>
+  <p>Oben fügst du deinen Code ein. Unten probierst du ihn aus.</p>
 
-  <section class="card" aria-labelledby="h-how">
-    <div class="row" style="justify-content:space-between">
-      <h2 id="h-how">So geht es</h2>
-      <button type="button" id="btnRead" aria-pressed="false">🔊 Vorlesen</button>
+  <div class="row">
+    <button type="button" id="btnRead" aria-pressed="false">🔊 Vorlesen</button>
+  </div>
+
+  <section class="win" id="winCode" aria-labelledby="h-code">
+    <div class="win-head">
+      <span class="badge" aria-hidden="true">1</span>
+      <h2 id="h-code"><label for="code">Hier kommt dein Code hinein</label></h2>
     </div>
-    <ol class="steps" id="howText">
-      <li>Kopiere deinen Code.</li>
-      <li>Tippe auf „Einfügen“.</li>
-      <li>Tippe auf „Start“.</li>
-    </ol>
+    <div class="win-body">
+      <div class="row">
+        <button type="button" class="blue" id="btnPaste">📋 Einfügen</button>
+        <button type="button" id="btnExample">💡 Beispiel</button>
+        <button type="button" id="btnClear">🧹 Leeren</button>
+      </div>
+      <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"
+        placeholder="Füge hier deinen Code ein …"></textarea>
+      <div class="row">
+        <button type="button" class="go" id="btnStart">▶ Start</button>
+      </div>
+      <div class="note" id="msg" role="status" hidden></div>
+    </div>
   </section>
 
-  <section class="card" aria-labelledby="h-code">
-    <h2 id="h-code"><label for="code">Dein Code</label></h2>
-    <div class="row">
-      <button type="button" class="blue" id="btnPaste">📋 Einfügen</button>
-      <button type="button" id="btnExample">💡 Beispiel zeigen</button>
-      <button type="button" id="btnClear">🧹 Leeren</button>
+  <div class="arrow" aria-hidden="true">⬇️</div>
+
+  <section class="win" id="winPlay" aria-labelledby="h-play">
+    <div class="win-head">
+      <span class="badge" aria-hidden="true">2</span>
+      <h2 id="h-play">Hier probierst du es aus</h2>
+      <button type="button" id="btnRestart">🔄 Neu starten</button>
+      <button type="button" id="btnBig">↕ Groß</button>
     </div>
-    <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"
-      placeholder="Hier kommt dein Code hinein …"></textarea>
-    <div class="row">
-      <button type="button" class="go" id="btnStart">▶ Start</button>
+    <div class="note" id="err" role="alert" hidden></div>
+    <div id="stage">
+      <div id="empty"><div class="big-emoji" aria-hidden="true">🎮</div><div>Hier erscheint dein Werk.<br>Tippe oben auf „Start“.</div></div>
+      <iframe id="frame" title="Dein Werk" sandbox="allow-scripts allow-modals allow-pointer-lock allow-forms"></iframe>
     </div>
-    <div class="note" id="msg" role="status" hidden></div>
   </section>
 
   <section class="card" aria-labelledby="h-save">
@@ -123,21 +150,13 @@
   </section>
 </main>
 
-<div id="player" hidden>
-  <div id="bar">
-    <button type="button" id="btnBack">⬅ Zurück zum Code</button>
-    <button type="button" id="btnRestart">🔄 Neu starten</button>
-  </div>
-  <div class="note" id="err" role="alert" hidden></div>
-  <iframe id="frame" title="Dein Werk" sandbox="allow-scripts allow-modals allow-pointer-lock allow-forms"></iframe>
-</div>
-
 <script>
 (function(){
   'use strict';
   var KEY = 'codeSpielplatz.v1';
   var $ = function(id){ return document.getElementById(id); };
   var code = $('code'), msg = $('msg'), frame = $('frame'), err = $('err');
+  var win = $('winPlay');
   var state = { draft:'', items:[], net:false };
 
   var EXAMPLE = [
@@ -220,14 +239,16 @@
     }
     code.value = src; state.draft = src; persist(); hush();
     err.hidden = true; err.textContent = '';
-    $('editor').hidden = true; $('player').hidden = false;
+    win.classList.add('on');
     frame.srcdoc = build(src);
-    frame.focus();
+    var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    win.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
+    frame.focus({ preventScroll: true });
   }
-  function back(){
-    frame.srcdoc = '';
-    $('player').hidden = true; $('editor').hidden = false;
-    $('btnStart').focus();
+  function setBig(on){
+    win.classList.toggle('big', on);
+    $('btnBig').textContent = on ? '↕ Klein' : '↕ Groß';
+    if(!on) win.scrollIntoView({ block: 'start' });
   }
 
   window.addEventListener('message', function(e){
@@ -282,8 +303,8 @@
 
   /* ---------- Knöpfe ---------- */
   $('btnStart').onclick = start;
-  $('btnBack').onclick = back;
-  $('btnRestart').onclick = function(){ err.hidden = true; frame.srcdoc = build(code.value); frame.focus(); };
+  $('btnRestart').onclick = start;
+  $('btnBig').onclick = function(){ setBig(!win.classList.contains('big')); };
   $('btnSave').onclick = save;
 
   $('btnPaste').onclick = function(){
@@ -335,7 +356,7 @@
   readBtn.onclick = function(){
     var s = window.speechSynthesis;
     if(s.speaking){ s.cancel(); readBtn.setAttribute('aria-pressed','false'); return; }
-    var u = new SpeechSynthesisUtterance('So geht es. Erstens: Kopiere deinen Code. Zweitens: Tippe auf Einfügen. Drittens: Tippe auf Start.');
+    var u = new SpeechSynthesisUtterance('So geht es. Erstens: Füge deinen Code in das Fenster mit der Eins ein. Zweitens: Tippe auf Start. Drittens: Probiere dein Werk im Fenster mit der Zwei aus.');
     u.lang = 'de-DE'; u.rate = 0.9;
     u.onend = function(){ readBtn.setAttribute('aria-pressed','false'); };
     readBtn.setAttribute('aria-pressed','true');
