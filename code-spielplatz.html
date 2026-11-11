@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Code-Spielplatz</title>
+<style>
+  :root{
+    --bg:#fff8ec; --card:#ffffff; --text:#1f2937; --muted:#4b5563;
+    --line:#d6c9b0; --go:#1d6b3a; --go-dark:#14502a; --blue:#1d4ed8;
+    --warn-bg:#fff1f0; --warn:#9f1c12; --focus:#f59e0b;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg);color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    font-size:18px;line-height:1.5;
+  }
+  main{max-width:860px;margin:0 auto;padding:16px 16px 48px}
+  h1{font-size:30px;margin:8px 0 4px;line-height:1.2}
+  h2{font-size:21px;margin:0 0 8px}
+  p{margin:0 0 12px}
+  .card{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:16px;margin-top:16px}
+  .steps{margin:0;padding-left:26px}
+  .steps li{margin-bottom:4px}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  button{
+    font:inherit;font-weight:700;min-height:48px;padding:10px 18px;
+    border-radius:12px;border:2px solid var(--text);background:#fff;color:var(--text);
+    cursor:pointer;touch-action:manipulation;
+  }
+  button:active{transform:translateY(2px);filter:brightness(.92)}
+  button:focus-visible,textarea:focus-visible,input:focus-visible,summary:focus-visible{outline:4px solid var(--focus);outline-offset:2px}
+  .go{background:var(--go);border-color:var(--go-dark);color:#fff;font-size:21px;padding:12px 28px}
+  .blue{background:var(--blue);border-color:#1e3a8a;color:#fff}
+  @media (hover:hover) and (pointer:fine){
+    button:hover{filter:brightness(.95)}
+  }
+  textarea{
+    width:100%;min-height:260px;resize:vertical;margin:10px 0;
+    font:16px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    padding:12px;border:2px solid var(--text);border-radius:12px;background:#fffdf8;color:var(--text);
+    white-space:pre;overflow:auto;tab-size:2;
+  }
+  input[type=text]{
+    font:inherit;font-size:18px;min-height:48px;padding:8px 12px;flex:1 1 180px;min-width:0;
+    border:2px solid var(--text);border-radius:12px;background:#fff;color:var(--text);
+  }
+  .note{border-radius:12px;padding:12px 14px;margin-top:10px;background:var(--warn-bg);color:var(--warn);border:2px solid var(--warn);font-weight:600;overflow-wrap:anywhere}
+  .ok{background:#ecfdf3;color:#14502a;border-color:#14502a}
+  [hidden]{display:none!important}
+  ul.saved{list-style:none;margin:8px 0 0;padding:0}
+  ul.saved li{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 0;border-top:2px solid var(--line)}
+  ul.saved .name{flex:1 1 160px;min-width:0;font-weight:700;overflow-wrap:anywhere}
+  .small{font-size:16px;color:var(--muted)}
+  details summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center}
+  label.check{display:flex;gap:12px;align-items:flex-start;min-height:44px;margin-top:8px}
+  label.check input{width:26px;height:26px;flex:none;margin-top:2px}
+
+  /* Spiel-Ansicht */
+  #player{position:fixed;inset:0;background:#111827;display:flex;flex-direction:column;z-index:10}
+  #bar{display:flex;gap:8px;padding:8px;background:#111827;align-items:center;flex-wrap:wrap}
+  #bar button{min-height:44px;padding:6px 14px;font-size:16px}
+  #err{margin:0;border-radius:0;border-width:0 0 3px 0}
+  #frame{flex:1 1 auto;width:100%;border:0;background:#fff;min-height:0}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}button:active{transform:none}}
+</style>
+</head>
+<body>
+
+<main id="editor">
+  <h1>🎮 Code-Spielplatz</h1>
+  <p>Hier kannst du deinen eigenen Code ausprobieren.</p>
+
+  <section class="card" aria-labelledby="h-how">
+    <div class="row" style="justify-content:space-between">
+      <h2 id="h-how">So geht es</h2>
+      <button type="button" id="btnRead" aria-pressed="false">🔊 Vorlesen</button>
+    </div>
+    <ol class="steps" id="howText">
+      <li>Kopiere deinen Code.</li>
+      <li>Tippe auf „Einfügen“.</li>
+      <li>Tippe auf „Start“.</li>
+    </ol>
+  </section>
+
+  <section class="card" aria-labelledby="h-code">
+    <h2 id="h-code"><label for="code">Dein Code</label></h2>
+    <div class="row">
+      <button type="button" class="blue" id="btnPaste">📋 Einfügen</button>
+      <button type="button" id="btnExample">💡 Beispiel zeigen</button>
+      <button type="button" id="btnClear">🧹 Leeren</button>
+    </div>
+    <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"
+      placeholder="Hier kommt dein Code hinein …"></textarea>
+    <div class="row">
+      <button type="button" class="go" id="btnStart">▶ Start</button>
+    </div>
+    <div class="note" id="msg" role="status" hidden></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-save">
+    <h2 id="h-save">Meine Sammlung</h2>
+    <p class="small">Deine Sammlung bleibt nur auf diesem Gerät.</p>
+    <div class="row">
+      <input type="text" id="saveName" maxlength="30" placeholder="Name für dein Werk" aria-label="Name für dein Werk">
+      <button type="button" id="btnSave">💾 Speichern</button>
+    </div>
+    <ul class="saved" id="savedList"></ul>
+    <p class="small" id="savedEmpty">Noch nichts gespeichert.</p>
+  </section>
+
+  <section class="card">
+    <details>
+      <summary>Für Lehrkräfte</summary>
+      <p class="small">Der eingefügte Code läuft abgeschottet in einem eigenen Rahmen. Er kann die Sammlung auf diesem Gerät nicht lesen. Diese Seite selbst lädt nichts aus dem Internet und sendet keine Daten.</p>
+      <label class="check">
+        <input type="checkbox" id="optNet">
+        <span>Dem eingefügten Code Internetzugriff erlauben. Das brauchst du, wenn der Code Bibliotheken, Schriften oder Bilder aus dem Netz lädt. Dann fließen Verbindungsdaten (zum Beispiel die IP-Adresse) an diese fremden Server.</span>
+      </label>
+    </details>
+  </section>
+</main>
+
+<div id="player" hidden>
+  <div id="bar">
+    <button type="button" id="btnBack">⬅ Zurück zum Code</button>
+    <button type="button" id="btnRestart">🔄 Neu starten</button>
+  </div>
+  <div class="note" id="err" role="alert" hidden></div>
+  <iframe id="frame" title="Dein Werk" sandbox="allow-scripts allow-modals allow-pointer-lock allow-forms"></iframe>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var KEY = 'codeSpielplatz.v1';
+  var $ = function(id){ return document.getElementById(id); };
+  var code = $('code'), msg = $('msg'), frame = $('frame'), err = $('err');
+  var state = { draft:'', items:[], net:false };
+
+  var EXAMPLE = [
+    '<!DOCTYPE html>',
+    '<html lang="de">',
+    '<head>',
+    '<meta charset="utf-8">',
+    '<title>Klick-Spiel</title>',
+    '<style>',
+    '  body { font-family: sans-serif; text-align: center; background: #e0f2fe; }',
+    '  button { font-size: 40px; padding: 20px 40px; border-radius: 20px; }',
+    '</style>',
+    '</head>',
+    '<body>',
+    '  <h1>Wie oft schaffst du es?</h1>',
+    '  <p>Punkte: <b id="punkte">0</b></p>',
+    '  <button onclick="klick()">⭐ Klick mich!</button>',
+    '  <script>',
+    '    let punkte = 0;',
+    '    function klick() {',
+    '      punkte = punkte + 1;',
+    '      document.getElementById("punkte").textContent = punkte;',
+    '    }',
+    '  <\/script>',
+    '</body>',
+    '</html>'
+  ].join('\n');
+
+  /* ---------- Speicher (nur auf dem Gerät) ---------- */
+  function load(){
+    try{
+      var s = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if(s && typeof s === 'object'){
+        state.draft = typeof s.draft === 'string' ? s.draft : '';
+        state.items = Array.isArray(s.items) ? s.items : [];
+        state.net = !!s.net;
+      }
+    }catch(e){}
+  }
+  function persist(){
+    try{ localStorage.setItem(KEY, JSON.stringify(state)); return true; }
+    catch(e){ return false; }
+  }
+
+  /* ---------- Meldungen ---------- */
+  function say(text, ok){
+    msg.textContent = text;
+    msg.className = 'note' + (ok ? ' ok' : '');
+    msg.hidden = false;
+  }
+  function hush(){ msg.hidden = true; }
+
+  /* ---------- Code aufräumen ---------- */
+  // Entfernt die Markierungen ``` aus Chat-Antworten, falls sie mitkopiert sind.
+  function clean(raw){
+    var t = String(raw).replace(/\r\n?/g, '\n').trim();
+    var m = t.match(/```[a-zA-Z]*\n([\s\S]*?)```/);
+    if(m) t = m[1].trim();
+    else t = t.replace(/^```[a-zA-Z]*\n/, '').replace(/\n```$/, '').trim();
+    return t;
+  }
+
+  /* ---------- Abspielen ---------- */
+  var GUARD = '<script>window.addEventListener("error",function(e){parent.postMessage({__spielplatz:1,msg:String(e.message||"Fehler"),line:e.lineno||0},"*")});<\/script>';
+  var CSP = '<meta http-equiv="Content-Security-Policy" content="default-src \'unsafe-inline\' \'unsafe-eval\' data: blob:">';
+
+  function build(src){
+    var extra = (state.net ? '' : CSP) + GUARD;
+    var m = src.match(/^\s*<!doctype[^>]*>/i);
+    if(m) return m[0] + extra + src.slice(m[0].length);
+    return extra + src;
+  }
+
+  function start(){
+    var src = clean(code.value);
+    if(!src){ say('Das Feld ist noch leer. Füge zuerst deinen Code ein.'); return; }
+    if(src.indexOf('<') === -1){
+      say('Das sieht nicht nach HTML aus. HTML-Code enthält Zeichen wie < und >.');
+      return;
+    }
+    code.value = src; state.draft = src; persist(); hush();
+    err.hidden = true; err.textContent = '';
+    $('editor').hidden = true; $('player').hidden = false;
+    frame.srcdoc = build(src);
+    frame.focus();
+  }
+  function back(){
+    frame.srcdoc = '';
+    $('player').hidden = true; $('editor').hidden = false;
+    $('btnStart').focus();
+  }
+
+  window.addEventListener('message', function(e){
+    if(e.source !== frame.contentWindow) return;
+    var d = e.data;
+    if(!d || d.__spielplatz !== 1) return;
+    var text = '⚠ Im Code steckt ein Fehler';
+    if(d.line) text += ' (Zeile ' + d.line + ')';
+    text += ': ' + String(d.msg).slice(0, 200);
+    err.textContent = text; err.hidden = false;
+  });
+
+  /* ---------- Sammlung ---------- */
+  function render(){
+    var ul = $('savedList'); ul.textContent = '';
+    state.items.forEach(function(it, i){
+      var li = document.createElement('li');
+      var n = document.createElement('span'); n.className = 'name'; n.textContent = it.name;
+      var b1 = document.createElement('button'); b1.type = 'button'; b1.textContent = '▶ Spielen';
+      b1.setAttribute('aria-label', it.name + ' spielen');
+      b1.onclick = function(){ code.value = it.code; start(); };
+      var b2 = document.createElement('button'); b2.type = 'button'; b2.textContent = '✏ Code holen';
+      b2.setAttribute('aria-label', 'Code von ' + it.name + ' holen');
+      b2.onclick = function(){ code.value = it.code; state.draft = it.code; persist(); $('saveName').value = it.name; say('Der Code von „' + it.name + '“ steht jetzt im Feld.', true); code.scrollIntoView({block:'center'}); };
+      var b3 = document.createElement('button'); b3.type = 'button'; b3.textContent = '🗑 Löschen';
+      b3.setAttribute('aria-label', it.name + ' löschen');
+      b3.onclick = function(){
+        if(!confirm('„' + it.name + '“ wirklich löschen?')) return;
+        state.items.splice(i, 1); persist(); render();
+      };
+      li.append(n, b1, b2, b3); ul.appendChild(li);
+    });
+    $('savedEmpty').hidden = state.items.length > 0;
+  }
+
+  function save(){
+    var src = clean(code.value);
+    var name = $('saveName').value.trim();
+    if(!src){ say('Es gibt noch keinen Code zum Speichern.'); return; }
+    if(!name){ say('Gib deinem Werk zuerst einen Namen.'); $('saveName').focus(); return; }
+    var found = state.items.filter(function(it){ return it.name === name; })[0];
+    if(found){
+      if(!confirm('„' + name + '“ gibt es schon. Überschreiben?')) return;
+      found.code = src;
+    } else {
+      state.items.push({ name:name, code:src });
+    }
+    if(persist()){ say('„' + name + '“ ist gespeichert.', true); }
+    else { say('Speichern hat nicht geklappt. Der Speicher des Geräts ist voll oder gesperrt.'); }
+    render();
+  }
+
+  /* ---------- Knöpfe ---------- */
+  $('btnStart').onclick = start;
+  $('btnBack').onclick = back;
+  $('btnRestart').onclick = function(){ err.hidden = true; frame.srcdoc = build(code.value); frame.focus(); };
+  $('btnSave').onclick = save;
+
+  $('btnPaste').onclick = function(){
+    if(navigator.clipboard && navigator.clipboard.readText){
+      navigator.clipboard.readText().then(function(t){
+        if(!t){ say('Die Zwischenablage ist leer. Kopiere zuerst deinen Code.'); return; }
+        code.value = t; state.draft = t; persist();
+        say('Dein Code ist eingefügt. Tippe jetzt auf „Start“.', true);
+      }).catch(manualPaste);
+    } else { manualPaste(); }
+  };
+  function manualPaste(){
+    code.focus();
+    say('Tippe lange in das Feld und wähle „Einfügen“. Am Computer: Strg und V.');
+  }
+
+  $('btnExample').onclick = function(){
+    if(code.value.trim() && !confirm('Dein Code im Feld wird ersetzt. Beispiel trotzdem zeigen?')) return;
+    code.value = EXAMPLE; state.draft = EXAMPLE; persist();
+    say('Das ist ein Beispiel. Tippe auf „Start“ und probiere es aus.', true);
+  };
+  $('btnClear').onclick = function(){
+    if(!code.value.trim()) return;
+    if(!confirm('Den Code im Feld wirklich löschen?')) return;
+    code.value = ''; state.draft = ''; persist(); hush(); code.focus();
+  };
+
+  var t;
+  code.addEventListener('input', function(){
+    clearTimeout(t);
+    t = setTimeout(function(){ state.draft = code.value; persist(); }, 400);
+  });
+  // Tab-Taste rückt ein, statt das Feld zu verlassen (Esc gibt die Taste wieder frei).
+  var tabFree = false;
+  code.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){ tabFree = true; return; }
+    if(e.key === 'Tab' && !e.shiftKey && !tabFree){
+      e.preventDefault();
+      code.setRangeText('  ', code.selectionStart, code.selectionEnd, 'end');
+    }
+  });
+  code.addEventListener('blur', function(){ tabFree = false; });
+
+  $('optNet').onchange = function(){ state.net = this.checked; persist(); };
+
+  /* ---------- Vorlesen ---------- */
+  var readBtn = $('btnRead');
+  if(!('speechSynthesis' in window)){ readBtn.hidden = true; }
+  readBtn.onclick = function(){
+    var s = window.speechSynthesis;
+    if(s.speaking){ s.cancel(); readBtn.setAttribute('aria-pressed','false'); return; }
+    var u = new SpeechSynthesisUtterance('So geht es. Erstens: Kopiere deinen Code. Zweitens: Tippe auf Einfügen. Drittens: Tippe auf Start.');
+    u.lang = 'de-DE'; u.rate = 0.9;
+    u.onend = function(){ readBtn.setAttribute('aria-pressed','false'); };
+    readBtn.setAttribute('aria-pressed','true');
+    s.speak(u);
+  };
+
+  /* ---------- Los ---------- */
+  load();
+  code.value = state.draft;
+  $('optNet').checked = state.net;
+  render();
+})();
+</script>
+</body>
+</html>
