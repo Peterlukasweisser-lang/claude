@@ -106,6 +106,7 @@
         placeholder="Füge hier deinen Code ein …"></textarea>
       <div class="row">
         <button type="button" class="go" id="btnStart">▶ Start</button>
+        <button type="button" id="btnFile">⬇ Als Datei speichern</button>
       </div>
       <div class="note" id="msg" role="status" hidden></div>
     </div>
@@ -306,6 +307,32 @@
   $('btnRestart').onclick = start;
   $('btnBig').onclick = function(){ setBig(!win.classList.contains('big')); };
   $('btnSave').onclick = save;
+
+  /* ---------- Als HTML-Datei auf das Gerät speichern ---------- */
+  function fileName(src){
+    var n = $('saveName').value.trim();
+    if(!n){ var m = src.match(/<title[^>]*>([^<]*)<\/title>/i); if(m) n = m[1].trim(); }
+    n = (n || 'mein-werk').toLowerCase()
+      .replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss')
+      .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0, 40);
+    return (n || 'mein-werk') + '.html';
+  }
+  $('btnFile').onclick = function(){
+    var src = clean(code.value);
+    if(!src){ say('Es gibt noch keinen Code zum Speichern.'); return; }
+    if(src.indexOf('<') === -1){ say('Das sieht nicht nach HTML aus. HTML-Code enthält Zeichen wie < und >.'); return; }
+    var name = fileName(src);
+    try{
+      var url = URL.createObjectURL(new Blob([src], { type:'text/html;charset=utf-8' }));
+      var a = document.createElement('a');
+      a.href = url; a.download = name; a.style.display = 'none';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      say('Deine Datei heißt „' + name + '“. Du findest sie bei den Downloads.', true);
+    }catch(e){
+      say('Das Speichern als Datei klappt auf diesem Gerät nicht.');
+    }
+  };
 
   $('btnPaste').onclick = function(){
     if(navigator.clipboard && navigator.clipboard.readText){
