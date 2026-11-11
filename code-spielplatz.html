@@ -69,6 +69,7 @@
   .badge{flex:none;width:40px;height:40px;border-radius:50%;background:#fff;color:var(--text);font-weight:800;font-size:22px;display:flex;align-items:center;justify-content:center}
   .win-body{padding:14px}
   #winCode .win-head{background:var(--blue)}
+  #winFile .win-head{background:#6d28d9}
   #winPlay .win-head{background:var(--go)}
   #winCode textarea{border-style:dashed;border-width:3px;border-color:var(--blue);margin-top:12px}
   .arrow{text-align:center;font-size:34px;line-height:1;margin:10px 0 -8px}
@@ -109,7 +110,6 @@
         placeholder="Füge hier deinen Code ein …"></textarea>
       <div class="row">
         <button type="button" class="go" id="btnStart">▶ Start</button>
-        <button type="button" id="btnFile">⬇ Als Datei speichern</button>
       </div>
       <div class="note" id="msg" role="status" hidden></div>
     </div>
@@ -140,6 +140,20 @@
     </div>
     <ul class="saved" id="savedList"></ul>
     <p class="small" id="savedEmpty">Noch nichts gespeichert.</p>
+  </section>
+
+  <section class="win" id="winFile" aria-labelledby="h-file">
+    <div class="win-head">
+      <span class="badge" aria-hidden="true">3</span>
+      <h2 id="h-file">Fertig? Speichere dein Werk</h2>
+    </div>
+    <div class="win-body">
+      <p>Das speichert dein Werk als Datei auf diesem Gerät. Du brauchst dafür die PIN von deiner Lehrerin oder deinem Lehrer.</p>
+      <div class="row">
+        <button type="button" class="go" id="btnFile">⬇ Als Datei speichern</button>
+      </div>
+      <div class="note" id="fileMsg" role="status" hidden></div>
+    </div>
   </section>
 
   <section class="card">
@@ -230,12 +244,13 @@
   }
 
   /* ---------- Meldungen ---------- */
-  function say(text, ok){
-    msg.textContent = text;
-    msg.className = 'note' + (ok ? ' ok' : '');
-    msg.hidden = false;
+  function say(text, ok, box){
+    box = box || msg;
+    box.textContent = text;
+    box.className = 'note' + (ok ? ' ok' : '');
+    box.hidden = false;
   }
-  function hush(){ msg.hidden = true; }
+  function hush(){ msg.hidden = true; $('fileMsg').hidden = true; }
 
   /* ---------- Code aufräumen ---------- */
   // Entfernt die Markierungen ``` aus Chat-Antworten, falls sie mitkopiert sind.
@@ -396,9 +411,10 @@
     askPin('Frage deine Lehrerin oder deinen Lehrer nach der PIN.', download);
   };
   function download(){
+    var fm = $('fileMsg');
     var src = clean(code.value);
-    if(!src){ say('Es gibt noch keinen Code zum Speichern.'); return; }
-    if(src.indexOf('<') === -1){ say('Das sieht nicht nach HTML aus. HTML-Code enthält Zeichen wie < und >.'); return; }
+    if(!src){ say('Es gibt noch keinen Code zum Speichern. Füge ihn zuerst oben ein.', false, fm); return; }
+    if(src.indexOf('<') === -1){ say('Das sieht nicht nach HTML aus. HTML-Code enthält Zeichen wie < und >.', false, fm); return; }
     var name = fileName(src);
     try{
       var url = URL.createObjectURL(new Blob([src], { type:'text/html;charset=utf-8' }));
@@ -406,9 +422,9 @@
       a.href = url; a.download = name; a.style.display = 'none';
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
-      say('Deine Datei heißt „' + name + '“. Du findest sie bei den Downloads.', true);
+      say('Deine Datei heißt „' + name + '“. Du findest sie bei den Downloads.', true, fm);
     }catch(e){
-      say('Das Speichern als Datei klappt auf diesem Gerät nicht.');
+      say('Das Speichern als Datei klappt auf diesem Gerät nicht.', false, fm);
     }
   }
 
