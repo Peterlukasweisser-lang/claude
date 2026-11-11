@@ -43,7 +43,7 @@
     padding:12px;border:2px solid var(--text);border-radius:12px;background:#fffdf8;color:var(--text);
     white-space:pre;overflow:auto;tab-size:2;
   }
-  input[type=text]{
+  input[type=text],input[type=password]{
     font:inherit;font-size:18px;min-height:48px;padding:8px 12px;flex:1 1 180px;min-width:0;
     border:2px solid var(--text);border-radius:12px;background:#fff;color:var(--text);
   }
@@ -58,6 +58,9 @@
   label.check{display:flex;gap:12px;align-items:flex-start;min-height:44px;margin-top:8px}
   label.check input{width:26px;height:26px;flex:none;margin-top:2px}
 
+  dialog{border:3px solid var(--text);border-radius:18px;padding:18px;max-width:min(92vw,380px);width:100%;color:var(--text);background:#fff}
+  dialog::backdrop{background:rgba(17,24,39,.6)}
+  dialog input{width:100%;margin-bottom:10px;font-size:24px;letter-spacing:.2em;text-align:center}
   /* Fenster */
   .win{background:var(--card);border:3px solid var(--text);border-radius:18px;margin-top:18px;overflow:hidden;box-shadow:0 5px 0 rgba(31,41,55,.18)}
   .win-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 14px;color:#fff}
@@ -147,18 +150,41 @@
         <input type="checkbox" id="optNet">
         <span>Dem eingefügten Code Internetzugriff erlauben. Das brauchst du, wenn der Code Bibliotheken, Schriften oder Bilder aus dem Netz lädt. Dann fließen Verbindungsdaten (zum Beispiel die IP-Adresse) an diese fremden Server.</span>
       </label>
+      <p class="small" style="margin-top:14px"><b>PIN für „Als Datei speichern“.</b> Mit PIN können Kinder ihr Werk nur mit dir zusammen als Datei speichern. Die PIN ist eine Hürde, kein echter Schutz: Sie liegt unverschlüsselt im Browser-Speicher dieses Geräts.</p>
+      <div class="row">
+        <input type="password" inputmode="numeric" id="pinNew" maxlength="8" autocomplete="off" placeholder="Neue PIN" aria-label="Neue PIN, 4 bis 8 Ziffern">
+        <button type="button" id="btnPinSet">PIN setzen</button>
+        <button type="button" id="btnPinDel">PIN entfernen</button>
+      </div>
+      <p class="small" id="pinState" role="status" style="margin-top:8px"></p>
     </details>
   </section>
 </main>
 
+<dialog id="pinDlg" aria-labelledby="pinTitle">
+  <form id="pinForm">
+    <h2 id="pinTitle">🔒 PIN eingeben</h2>
+    <p id="pinText"></p>
+    <input type="password" inputmode="numeric" id="pinIn" maxlength="8" autocomplete="off" aria-labelledby="pinTitle">
+    <div class="note" id="pinErr" role="alert" hidden style="margin:0 0 10px"></div>
+    <div class="row">
+      <button type="submit" class="go" id="pinOk">OK</button>
+      <button type="button" id="pinCancel">Abbrechen</button>
+    </div>
+  </form>
+</dialog>
+
 <script>
 (function(){
   'use strict';
+  // Feste PIN für alle Geräte: zwischen die Anführungszeichen schreiben, zum Beispiel '2468'.
+  // Leer lassen, wenn du die PIN lieber pro Gerät unter „Für Lehrkräfte“ setzt.
+  var PIN_VORGABE = '';
   var KEY = 'codeSpielplatz.v1';
   var $ = function(id){ return document.getElementById(id); };
   var code = $('code'), msg = $('msg'), frame = $('frame'), err = $('err');
   var win = $('winPlay');
-  var state = { draft:'', items:[], net:false };
+  var state = { draft:'', items:[], net:false, pin:'' };
 
   var EXAMPLE = [
     '<!DOCTYPE html>',
@@ -194,6 +220,7 @@
         state.draft = typeof s.draft === 'string' ? s.draft : '';
         state.items = Array.isArray(s.items) ? s.items : [];
         state.net = !!s.net;
+        state.pin = typeof s.pin === 'string' ? s.pin : '';
       }
     }catch(e){}
   }
@@ -317,7 +344,58 @@
       .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0, 40);
     return (n || 'mein-werk') + '.html';
   }
+  /* ---------- PIN ---------- */
+  function pin(){ return state.pin || PIN_VORGABE; }
+  var dlg = $('pinDlg'), pinDone = null;
+  function askPin(text, done){
+    if(!pin()){ done(); return; }
+    if(!dlg.showModal){
+      var v = prompt(text);
+      if(v === null) return;
+      if(v.trim() === pin()) done(); else alert('Die PIN stimmt nicht.');
+      return;
+    }
+    pinDone = done;
+    $('pinText').textContent = text;
+    $('pinIn').value = ''; $('pinErr').hidden = true;
+    dlg.showModal(); $('pinIn').focus();
+  }
+  $('pinForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    if($('pinIn').value.trim() === pin()){
+      var d = pinDone; pinDone = null; dlg.close(); if(d) d();
+    } else {
+      $('pinErr').textContent = 'Die PIN stimmt nicht.';
+      $('pinErr').hidden = false; $('pinIn').value = ''; $('pinIn').focus();
+    }
+  });
+  $('pinCancel').onclick = function(){ pinDone = null; dlg.close(); };
+  function pinInfo(extra){
+    var t = state.pin ? 'Auf diesem Gerät ist eine PIN gesetzt.'
+          : PIN_VORGABE ? 'Eine feste PIN steht in der Datei.'
+          : 'Es ist keine PIN gesetzt.';
+    $('pinState').textContent = (extra ? extra + ' ' : '') + t;
+    $('btnFile').textContent = (pin() ? '🔒 ' : '⬇ ') + 'Als Datei speichern';
+  }
+  $('btnPinSet').onclick = function(){
+    var v = $('pinNew').value.trim();
+    if(!/^[0-9]{4,8}$/.test(v)){ pinInfo('Die PIN braucht 4 bis 8 Ziffern.'); return; }
+    askPin('Gib zuerst die bisherige PIN ein.', function(){
+      state.pin = v; $('pinNew').value = '';
+      pinInfo(persist() ? 'Die neue PIN gilt ab jetzt.' : 'Die PIN ließ sich nicht dauerhaft speichern.');
+    });
+  };
+  $('btnPinDel').onclick = function(){
+    if(!state.pin){ pinInfo(PIN_VORGABE ? 'Die feste PIN lässt sich nur in der Datei ändern.' : ''); return; }
+    askPin('Gib die bisherige PIN ein, um sie zu entfernen.', function(){
+      state.pin = ''; persist(); pinInfo('Die PIN ist entfernt.');
+    });
+  };
+
   $('btnFile').onclick = function(){
+    askPin('Frage deine Lehrerin oder deinen Lehrer nach der PIN.', download);
+  };
+  function download(){
     var src = clean(code.value);
     if(!src){ say('Es gibt noch keinen Code zum Speichern.'); return; }
     if(src.indexOf('<') === -1){ say('Das sieht nicht nach HTML aus. HTML-Code enthält Zeichen wie < und >.'); return; }
@@ -332,7 +410,7 @@
     }catch(e){
       say('Das Speichern als Datei klappt auf diesem Gerät nicht.');
     }
-  };
+  }
 
   $('btnPaste').onclick = function(){
     if(navigator.clipboard && navigator.clipboard.readText){
@@ -394,6 +472,7 @@
   load();
   code.value = state.draft;
   $('optNet').checked = state.net;
+  pinInfo();
   render();
 })();
 </script>
