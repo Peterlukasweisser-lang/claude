@@ -1,7 +1,17 @@
 <!DOCTYPE html>
+<!--
+  Konzept und Gestaltung: Peter Weißer, 2026
+  Lizenz: Creative Commons Namensnennung - Weitergabe unter gleichen Bedingungen 4.0 International (CC BY-SA 4.0)
+  https://creativecommons.org/licenses/by-sa/4.0/deed.de
+  Du darfst die Datei nutzen, verändern und weitergeben, wenn du den Namen nennst und
+  Veränderungen unter derselben Lizenz weitergibst.
+-->
 <html lang="de">
 <head>
 <meta charset="utf-8">
+<meta name="author" content="Peter Weißer">
+<meta name="copyright" content="© 2026 Peter Weißer, CC BY-SA 4.0">
+<link rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/deed.de">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Code-Spielplatz</title>
 <style>
@@ -61,6 +71,8 @@
   dialog{border:3px solid var(--text);border-radius:18px;padding:18px;max-width:min(92vw,380px);width:100%;color:var(--text);background:#fff}
   dialog::backdrop{background:rgba(17,24,39,.6)}
   dialog input{width:100%;margin-bottom:10px;font-size:24px;letter-spacing:.2em;text-align:center}
+  footer.lic{margin:24px 0 0;padding:12px 0 0;border-top:1px solid var(--line);font-size:14px;line-height:1.5;color:var(--muted)}
+  footer.lic a{color:inherit;text-decoration:underline}
   /* Fenster */
   .win{background:var(--card);border:3px solid var(--text);border-radius:18px;margin-top:18px;overflow:hidden;box-shadow:0 5px 0 rgba(31,41,55,.18)}
   .win-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 14px;color:#fff}
@@ -173,6 +185,11 @@
       <p class="small" id="pinState" role="status" style="margin-top:8px"></p>
     </details>
   </section>
+  <footer class="lic">
+    Konzept und Gestaltung: Peter Weißer · © 2026 ·
+    <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="license noopener noreferrer">CC BY-SA 4.0</a>
+    · Nutzen, verändern und weitergeben ist erlaubt, wenn der Name genannt wird.
+  </footer>
 </main>
 
 <dialog id="pinDlg" aria-labelledby="pinTitle">

@@ -1,7 +1,17 @@
 <!DOCTYPE html>
+<!--
+  Konzept und Gestaltung: Peter Weißer, 2026
+  Lizenz: Creative Commons Namensnennung - Weitergabe unter gleichen Bedingungen 4.0 International (CC BY-SA 4.0)
+  https://creativecommons.org/licenses/by-sa/4.0/deed.de
+  Du darfst die Datei nutzen, verändern und weitergeben, wenn du den Namen nennst und
+  Veränderungen unter derselben Lizenz weitergibst.
+-->
 <html lang="de">
 <head>
 <meta charset="utf-8">
+<meta name="author" content="Peter Weißer">
+<meta name="copyright" content="© 2026 Peter Weißer, CC BY-SA 4.0">
+<link rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/deed.de">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AIS-Chat HTML-Builder</title>
 <style>
@@ -68,6 +78,8 @@
   label.check{display:flex;gap:10px;align-items:flex-start;min-height:44px;margin:6px 0}
   label.check input{width:22px;height:22px;flex:none;margin-top:3px}
   kbd{font:13px ui-monospace,Menlo,Consolas,monospace;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--code-bg)}
+  footer.lic{margin:24px 0 0;padding:12px 0 0;border-top:1px solid var(--line);font-size:14px;line-height:1.5;color:var(--muted)}
+  footer.lic a{color:inherit;text-decoration:underline}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -159,6 +171,11 @@
       </details>
     </div>
   </section>
+  <footer class="lic">
+    Konzept und Gestaltung: Peter Weißer · © 2026 ·
+    <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="license noopener noreferrer">CC BY-SA 4.0</a>
+    · Nutzen, verändern und weitergeben ist erlaubt, wenn der Name genannt wird.
+  </footer>
 </main>
 
 <script>
