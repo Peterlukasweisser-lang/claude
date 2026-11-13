@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIS-Chat HTML-Builder</title>
+<style>
+  :root{
+    --bg:#f4f5f7; --panel:#ffffff; --text:#1b2330; --muted:#566274; --line:#cfd5de;
+    --accent:#1f4e8c; --accent-text:#ffffff; --ok-bg:#e8f5ec; --ok:#17542c;
+    --err-bg:#fdecea; --err:#8f1d14; --focus:#d97706; --code-bg:#fbfcfd;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#12161c; --panel:#1b222c; --text:#e8ecf2; --muted:#a6b0bf; --line:#3a4555;
+      --accent:#7fb2f0; --accent-text:#0b1a2e; --ok-bg:#12301d; --ok:#9be2b3;
+      --err-bg:#3a1713; --err:#ffb4aa; --focus:#fbbf24; --code-bg:#151b23;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  header{background:var(--panel);border-bottom:1px solid var(--line);padding:12px 16px}
+  .head-in{max-width:1400px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline}
+  h1{font-size:20px;margin:0}
+  .sub{color:var(--muted);font-size:15px;margin:0}
+  main{max-width:1400px;margin:0 auto;padding:16px}
+  .grid{display:grid;gap:16px;grid-template-columns:1fr}
+  @media (min-width:960px){.grid{grid-template-columns:1fr 1fr;align-items:start}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+  .panel-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line)}
+  .panel-head h2{font-size:16px;margin:0;flex:1 1 140px}
+  button,select{
+    font:inherit;min-height:44px;padding:6px 14px;border-radius:8px;border:1px solid var(--line);
+    background:var(--panel);color:var(--text);cursor:pointer;touch-action:manipulation;
+  }
+  button:active{filter:brightness(.92)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-text);font-weight:600}
+  button[aria-pressed="true"]{outline:2px solid var(--accent)}
+  :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+  @media (hover:hover) and (pointer:fine){button:hover{filter:brightness(.96)}}
+  textarea{
+    display:block;width:100%;height:420px;min-height:200px;resize:vertical;border:0;border-bottom:1px solid var(--line);
+    padding:12px;background:var(--code-bg);color:var(--text);
+    font:15px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre;overflow:auto;tab-size:2;
+  }
+  textarea:focus-visible{outline-offset:-3px}
+  .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px}
+  .stat{color:var(--muted);font-size:14px;margin-left:auto}
+  .note{margin:0;padding:10px 12px;font-size:15px;overflow-wrap:anywhere}
+  .note.ok{background:var(--ok-bg);color:var(--ok)}
+  .note.err{background:var(--err-bg);color:var(--err)}
+  [hidden]{display:none!important}
+  #stage{background:repeating-conic-gradient(#e4e7ec 0 25%,#f4f5f7 0 50%) 0 0/16px 16px;height:480px;display:flex;justify-content:center;overflow:auto;position:relative}
+  #frame{width:100%;height:100%;border:0;background:#fff;display:block;flex:none}
+  #empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;color:var(--muted);background:var(--panel)}
+  #panelOut.on #empty{display:none}
+  #panelOut.big{position:fixed;inset:0;z-index:20;border-radius:0;border:0}
+  #panelOut.big #stage{flex:1 1 auto;height:auto;min-height:0}
+  .below{display:grid;gap:16px;margin-top:16px;grid-template-columns:1fr}
+  @media (min-width:960px){.below{grid-template-columns:1fr 1fr;align-items:start}}
+  .body{padding:12px}
+  input[type=text]{font:inherit;min-height:44px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text);flex:1 1 200px;min-width:0}
+  ul.list{list-style:none;margin:0;padding:0}
+  ul.list li{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+  ul.list .name{flex:1 1 160px;min-width:0;font-weight:600;overflow-wrap:anywhere}
+  .small{font-size:14px;color:var(--muted);margin:0 0 10px}
+  label.check{display:flex;gap:10px;align-items:flex-start;min-height:44px;margin:6px 0}
+  label.check input{width:22px;height:22px;flex:none;margin-top:3px}
+  kbd{font:13px ui-monospace,Menlo,Consolas,monospace;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--code-bg)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="head-in">
+    <h1>AIS-Chat HTML-Builder</h1>
+    <p class="sub">HTML-Code aus dem Chat einfügen, ausprobieren, anpassen und als Datei speichern.</p>
+  </div>
+</header>
+
+<main>
+  <div class="grid">
+    <section class="panel" aria-labelledby="h-code">
+      <div class="panel-head">
+        <h2 id="h-code"><label for="code">1 · Code</label></h2>
+        <button type="button" id="btnPaste">Einfügen</button>
+        <button type="button" id="btnExample">Beispiel</button>
+        <button type="button" id="btnClear">Leeren</button>
+      </div>
+      <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"
+        placeholder="HTML-Code hier einfügen. Markierungen wie ```html aus dem Chat werden automatisch entfernt."></textarea>
+      <div class="bar">
+        <button type="button" class="primary" id="btnRun">Ausführen</button>
+        <span class="small" style="margin:0"><kbd>Strg</kbd> + <kbd>Enter</kbd></span>
+        <span class="stat" id="stat" aria-live="off"></span>
+      </div>
+      <p class="note" id="msg" role="status" hidden></p>
+    </section>
+
+    <section class="panel" id="panelOut" aria-labelledby="h-out">
+      <div class="panel-head">
+        <h2 id="h-out">2 · Vorschau</h2>
+        <select id="size" aria-label="Vorschau-Breite">
+          <option value="100%">Volle Breite</option>
+          <option value="1024px">Desktop 1024</option>
+          <option value="768px">Tablet 768</option>
+          <option value="390px">Handy 390</option>
+        </select>
+        <button type="button" id="btnReload">Neu laden</button>
+        <button type="button" id="btnBig" aria-pressed="false">Vollbild</button>
+      </div>
+      <p class="note err" id="err" role="alert" hidden></p>
+      <div id="stage">
+        <div id="empty">Hier erscheint die Vorschau.<br>Code einfügen und auf „Ausführen“ klicken.</div>
+        <iframe id="frame" title="Vorschau" sandbox="allow-scripts allow-modals allow-pointer-lock allow-forms"></iframe>
+      </div>
+    </section>
+  </div>
+
+  <div class="below">
+    <section class="panel" aria-labelledby="h-save">
+      <div class="panel-head"><h2 id="h-save">3 · Projekte auf diesem Gerät</h2></div>
+      <div class="body">
+        <p class="small">Die Projekte liegen im Browser dieses Geräts und werden nirgendwohin gesendet. Beim Löschen der Website-Daten gehen sie verloren. Wichtiges zusätzlich als Datei sichern.</p>
+        <div class="bar" style="padding:0 0 8px">
+          <input type="text" id="saveName" maxlength="60" placeholder="Projektname" aria-label="Projektname">
+          <button type="button" id="btnSave">Speichern</button>
+        </div>
+        <ul class="list" id="savedList"></ul>
+        <p class="small" id="savedEmpty" style="margin-top:8px">Noch keine Projekte gespeichert.</p>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-file">
+      <div class="panel-head"><h2 id="h-file">4 · Als HTML-Datei exportieren</h2></div>
+      <div class="body">
+        <p class="small">Speichert den aktuellen Code als eigenständige Datei. Sie läuft ohne diese Seite in jedem Browser.</p>
+        <div class="bar" style="padding:0">
+          <button type="button" class="primary" id="btnFile">Als Datei speichern</button>
+          <button type="button" id="btnCopy">Code kopieren</button>
+        </div>
+        <p class="note" id="fileMsg" role="status" hidden style="padding:10px 0 0"></p>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="body">
+      <details>
+        <summary style="cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:600">Einstellungen und Hinweise</summary>
+        <label class="check">
+          <input type="checkbox" id="optNet">
+          <span>Externe Ressourcen in der Vorschau erlauben (Bibliotheken, Schriften, Bilder aus dem Netz). Dabei fließen Verbindungsdaten wie die IP-Adresse an die jeweiligen Server. Standard ist aus.</span>
+        </label>
+        <p class="small">Der Code läuft in einem abgeschotteten Rahmen und kann die Projekte auf diesem Gerät nicht lesen. Der Builder selbst lädt nichts aus dem Internet und sendet keine Daten. Der exportierte Code läuft außerhalb dieser Abschottung. Fremden Code vor dem Weitergeben prüfen.</p>
+        <p class="small" style="margin-bottom:0">Tipp für den Chat: „Erstelle alles in einer einzigen HTML-Datei, ohne externe Links, Schriften oder Bibliotheken.“</p>
+      </details>
+    </div>
+  </section>
+</main>
+
+<script>
+(function(){
+  'use strict';
+  var KEY = 'aisChatHtmlBuilder.v1';
+  var $ = function(id){ return document.getElementById(id); };
+  var code = $('code'), msg = $('msg'), frame = $('frame'), err = $('err'), panel = $('panelOut');
+  var state = { draft:'', items:[], net:false, size:'100%' };
+
+  var EXAMPLE = [
+    '<!DOCTYPE html>',
+    '<html lang="de">',
+    '<head>',
+    '<meta charset="utf-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    '<title>Beispiel</title>',
+    '<style>',
+    '  body { font-family: system-ui, sans-serif; max-width: 32rem; margin: 2rem auto; padding: 0 1rem; }',
+    '  button { font-size: 1.1rem; padding: .6rem 1.2rem; }',
+    '</style>',
+    '</head>',
+    '<body>',
+    '  <h1>Zähler</h1>',
+    '  <p>Stand: <b id="n">0</b></p>',
+    '  <button onclick="plus()">Plus eins</button>',
+    '  <script>',
+    '    let n = 0;',
+    '    function plus() {',
+    '      n = n + 1;',
+    '      document.getElementById("n").textContent = n;',
+    '    }',
+    '  <\/script>',
+    '</body>',
+    '</html>'
+  ].join('\n');
+
+  /* ---------- Speicher ---------- */
+  function load(){
+    try{
+      var s = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if(s && typeof s === 'object'){
+        state.draft = typeof s.draft === 'string' ? s.draft : '';
+        state.items = Array.isArray(s.items) ? s.items : [];
+        state.net = !!s.net;
+        state.size = typeof s.size === 'string' ? s.size : '100%';
+      }
+    }catch(e){}
+  }
+  function persist(){
+    try{ localStorage.setItem(KEY, JSON.stringify(state)); return true; }
+    catch(e){ return false; }
+  }
+
+  /* ---------- Meldungen ---------- */
+  function say(text, kind, box){
+    box = box || msg;
+    box.textContent = text;
+    box.className = 'note ' + (kind || 'err');
+    if(box.id === 'fileMsg') box.className = 'note ' + (kind || 'err');
+    box.hidden = false;
+  }
+  function hush(){ msg.hidden = true; $('fileMsg').hidden = true; }
+
+  function stat(){
+    var v = code.value;
+    var lines = v ? v.split('\n').length : 0;
+    $('stat').textContent = lines + ' Zeilen · ' + v.length + ' Zeichen';
+  }
+
+  /* ---------- Code aufräumen ---------- */
+  function clean(raw){
+    var t = String(raw).replace(/\r\n?/g, '\n').trim();
+    var m = t.match(/```[a-zA-Z]*\n([\s\S]*?)```/);
+    if(m) t = m[1].trim();
+    else t = t.replace(/^```[a-zA-Z]*\n/, '').replace(/\n```$/, '').trim();
+    return t;
+  }
+  function checkHtml(src){
+    if(!src) return 'Das Codefeld ist leer.';
+    if(src.indexOf('<') === -1) return 'Das sieht nicht nach HTML aus. Es fehlen Tags wie <html> oder <div>.';
+    return '';
+  }
+
+  /* ---------- Ausführen ---------- */
+  var GUARD = '<script>window.addEventListener("error",function(e){parent.postMessage({__builder:1,msg:String(e.message||"Fehler"),line:e.lineno||0},"*")});<\/script>';
+  var CSP = '<meta http-equiv="Content-Security-Policy" content="default-src \'unsafe-inline\' \'unsafe-eval\' data: blob:">';
+  function build(src){
+    var extra = (state.net ? '' : CSP) + GUARD;
+    var m = src.match(/^\s*<!doctype[^>]*>/i);
+    if(m) return m[0] + extra + src.slice(m[0].length);
+    return extra + src;
+  }
+  function run(){
+    var src = clean(code.value);
+    var bad = checkHtml(src);
+    if(bad){ say(bad); return; }
+    code.value = src; state.draft = src; persist(); stat(); hush();
+    err.hidden = true; err.textContent = '';
+    panel.classList.add('on');
+    frame.srcdoc = build(src);
+    if(!panel.classList.contains('big') && window.matchMedia('(max-width:959px)').matches){
+      var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      panel.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
+    }
+  }
+  window.addEventListener('message', function(e){
+    if(e.source !== frame.contentWindow) return;
+    var d = e.data;
+    if(!d || d.__builder !== 1) return;
+    var t = 'Fehler im Code';
+    if(d.line) t += ' (Zeile ' + d.line + ')';
+    t += ': ' + String(d.msg).slice(0, 200);
+    err.textContent = t; err.hidden = false;
+  });
+
+  /* ---------- Vorschau-Größe, Vollbild ---------- */
+  function applySize(){
+    frame.style.width = state.size;
+    frame.style.maxWidth = '100%';
+    $('size').value = state.size;
+  }
+  $('size').onchange = function(){ state.size = this.value; persist(); applySize(); };
+  function setBig(on){
+    panel.classList.toggle('big', on);
+    $('btnBig').setAttribute('aria-pressed', on ? 'true' : 'false');
+    $('btnBig').textContent = on ? 'Vollbild beenden' : 'Vollbild';
+  }
+  $('btnBig').onclick = function(){ setBig(!panel.classList.contains('big')); };
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && panel.classList.contains('big')) setBig(false);
+  });
+  $('btnReload').onclick = run;
+
+  /* ---------- Projekte ---------- */
+  function render(){
+    var ul = $('savedList'); ul.textContent = '';
+    state.items.forEach(function(it, i){
+      var li = document.createElement('li');
+      var n = document.createElement('span'); n.className = 'name'; n.textContent = it.name;
+      var b1 = document.createElement('button'); b1.type = 'button'; b1.textContent = 'Laden';
+      b1.setAttribute('aria-label', it.name + ' laden');
+      b1.onclick = function(){
+        code.value = it.code; state.draft = it.code; persist(); stat();
+        $('saveName').value = it.name; run();
+      };
+      var b2 = document.createElement('button'); b2.type = 'button'; b2.textContent = 'Löschen';
+      b2.setAttribute('aria-label', it.name + ' löschen');
+      b2.onclick = function(){
+        if(!confirm('„' + it.name + '“ wirklich löschen?')) return;
+        state.items.splice(i, 1); persist(); render();
+      };
+      li.append(n, b1, b2); ul.appendChild(li);
+    });
+    $('savedEmpty').hidden = state.items.length > 0;
+  }
+  $('btnSave').onclick = function(){
+    var src = clean(code.value), name = $('saveName').value.trim();
+    if(!src){ say('Es gibt noch keinen Code zum Speichern.'); return; }
+    if(!name){ say('Bitte zuerst einen Projektnamen eingeben.'); $('saveName').focus(); return; }
+    var found = state.items.filter(function(it){ return it.name === name; })[0];
+    if(found){
+      if(!confirm('„' + name + '“ existiert schon. Überschreiben?')) return;
+      found.code = src;
+    } else { state.items.push({ name:name, code:src }); }
+    if(persist()) say('„' + name + '“ ist gespeichert.', 'ok');
+    else say('Speichern im Browser hat nicht geklappt. Speicher voll oder gesperrt. Bitte als Datei exportieren.');
+    render();
+  };
+
+  /* ---------- Export ---------- */
+  function fileName(src){
+    var n = $('saveName').value.trim();
+    if(!n){ var m = src.match(/<title[^>]*>([^<]*)<\/title>/i); if(m) n = m[1].trim(); }
+    n = (n || 'projekt').toLowerCase()
+      .replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss')
+      .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0, 50);
+    return (n || 'projekt') + '.html';
+  }
+  $('btnFile').onclick = function(){
+    var fm = $('fileMsg'), src = clean(code.value), bad = checkHtml(src);
+    if(bad){ say(bad, 'err', fm); return; }
+    var name = fileName(src);
+    try{
+      var url = URL.createObjectURL(new Blob([src], { type:'text/html;charset=utf-8' }));
+      var a = document.createElement('a');
+      a.href = url; a.download = name; a.style.display = 'none';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      say('Gespeichert als „' + name + '“ (Download-Ordner).', 'ok', fm);
+    }catch(e){ say('Der Export klappt in diesem Browser nicht. Nutze „Code kopieren“.', 'err', fm); }
+  };
+  $('btnCopy').onclick = function(){
+    var fm = $('fileMsg'), src = clean(code.value), bad = checkHtml(src);
+    if(bad){ say(bad, 'err', fm); return; }
+    function fallback(){
+      var ta = document.createElement('textarea'); ta.value = src; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      var ok = false; try{ ok = document.execCommand('copy'); }catch(e){}
+      ta.remove();
+      say(ok ? 'Code kopiert.' : 'Kopieren nicht möglich. Bitte den Code im Feld markieren und mit Strg+C kopieren.', ok ? 'ok' : 'err', fm);
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(src).then(function(){ say('Code kopiert.', 'ok', fm); }, fallback);
+    } else { fallback(); }
+  };
+
+  /* ---------- Eingabe ---------- */
+  $('btnRun').onclick = run;
+  $('btnPaste').onclick = function(){
+    function manual(){ code.focus(); say('Einfügen per Knopf ist hier gesperrt. Im Feld Strg+V (am Mac Cmd+V) drücken.'); }
+    if(navigator.clipboard && navigator.clipboard.readText){
+      navigator.clipboard.readText().then(function(t){
+        if(!t){ say('Die Zwischenablage ist leer.'); return; }
+        code.value = t; state.draft = t; persist(); stat();
+        say('Code eingefügt. Weiter mit „Ausführen“.', 'ok');
+      }).catch(manual);
+    } else { manual(); }
+  };
+  $('btnExample').onclick = function(){
+    if(code.value.trim() && !confirm('Der Inhalt des Codefelds wird ersetzt. Fortfahren?')) return;
+    code.value = EXAMPLE; state.draft = EXAMPLE; persist(); stat();
+    say('Beispiel geladen. Weiter mit „Ausführen“.', 'ok');
+  };
+  $('btnClear').onclick = function(){
+    if(!code.value.trim()) return;
+    if(!confirm('Codefeld wirklich leeren? Nicht gespeicherte Änderungen gehen verloren.')) return;
+    code.value = ''; state.draft = ''; persist(); stat(); hush(); code.focus();
+  };
+  var t;
+  code.addEventListener('input', function(){
+    stat(); clearTimeout(t);
+    t = setTimeout(function(){ state.draft = code.value; persist(); }, 400);
+  });
+  var tabFree = false;
+  code.addEventListener('keydown', function(e){
+    if((e.ctrlKey || e.metaKey) && e.key === 'Enter'){ e.preventDefault(); run(); return; }
+    if(e.key === 'Escape'){ tabFree = true; return; }
+    if(e.key === 'Tab' && !e.shiftKey && !tabFree){
+      e.preventDefault(); code.setRangeText('  ', code.selectionStart, code.selectionEnd, 'end'); stat();
+    }
+  });
+  code.addEventListener('blur', function(){ tabFree = false; });
+  $('optNet').onchange = function(){ state.net = this.checked; persist(); };
+
+  /* ---------- Start ---------- */
+  load();
+  code.value = state.draft;
+  $('optNet').checked = state.net;
+  applySize(); render(); stat();
+})();
+</script>
+</body>
+</html>
