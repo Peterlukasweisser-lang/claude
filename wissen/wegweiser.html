@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wegweiser</title>
+<style>
+:root{
+  --bg:#f5f6f2;--surface:#fff;--ink:#1d2a27;--muted:#5d6b66;--line:#dde2db;--accent:#2d6a57;--accent-soft:#e1eee8;
+  --ok:#2f7a4a;--ok-bg:#e3f1e7;--warn:#9a6200;--warn-bg:#fbf0d9;--bad:#a63b2e;--bad-bg:#f8e3df;--idle:#6a6f7a;--idle-bg:#eceef1;
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141a18;--surface:#1b2320;--ink:#e4ebe7;--muted:#9aa8a2;--line:#2c3632;--accent:#7cc4aa;--accent-soft:#1f3a31;
+  --ok:#7fcf9a;--ok-bg:#1d3325;--warn:#e8b65a;--warn-bg:#3a2e17;--bad:#f09584;--bad-bg:#3e221d;--idle:#a9aeb8;--idle-bg:#262b30;}}
+:root[data-theme="dark"]{
+  --bg:#141a18;--surface:#1b2320;--ink:#e4ebe7;--muted:#9aa8a2;--line:#2c3632;--accent:#7cc4aa;--accent-soft:#1f3a31;
+  --ok:#7fcf9a;--ok-bg:#1d3325;--warn:#e8b65a;--warn-bg:#3a2e17;--bad:#f09584;--bad-bg:#3e221d;--idle:#a9aeb8;--idle-bg:#262b30;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--font);padding:24px 16px 56px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:16px}
+h1{font-size:clamp(26px,4.5vw,38px);margin:0;line-height:1.15}
+h2{font-size:18px;margin:0 0 8px}
+.muted{color:var(--muted)}
+.warnbar{background:var(--bad-bg);color:var(--bad);border:1px solid var(--bad);padding:10px 14px;border-radius:8px;font-weight:600}
+.stats{display:flex;flex-wrap:wrap;gap:6px 26px}
+.stats div{display:grid}.stats b{font-size:26px;line-height:1.1}.stats span{font-size:13px;color:var(--muted)}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+input[type=search]{font:inherit;min-width:0;flex:1 1 200px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+button,.chipbtn{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 12px;border-radius:8px;min-height:40px}
+button[aria-selected=true]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.chipbtn{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;min-height:36px;font-size:14px}
+.chipbtn[aria-pressed=false]{opacity:.45}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+@media(max-width:860px){.main{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+svg{width:100%;height:auto;display:block;touch-action:none;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.edge{stroke:var(--muted);stroke-width:1.2;opacity:.45}
+.edge.hot{stroke:var(--accent);stroke-width:2.2;opacity:1}
+.node{cursor:pointer}
+.node .shape{stroke:var(--surface);stroke-width:2}
+.node.sel .shape{stroke:var(--ink);stroke-width:3}
+.node text{font-size:11.5px;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.dim{opacity:.18}
+@media(max-width:640px){.node text{display:none;font-size:24px;stroke-width:6px}.node.sel text,.node.nbr text{display:block}.node .shape{stroke-width:3}}
+.hidden{display:none!important}
+.chip{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 7px;border-radius:4px}
+.c-ok{background:var(--ok-bg);color:var(--ok)}.c-ueberarbeiten{background:var(--warn-bg);color:var(--warn)}.c-leer{background:var(--idle-bg);color:var(--idle)}
+.c-warn{background:var(--warn-bg);color:var(--warn)}.c-bad{background:var(--bad-bg);color:var(--bad)}
+dl{margin:10px 0 0;display:grid;gap:8px}dt{font:600 12px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}dd{margin:0}
+ul{margin:4px 0 0;padding-left:18px}li{margin:2px 0}
+.link{background:none;border:0;padding:0;min-height:0;color:var(--accent);text-decoration:underline;cursor:pointer;text-align:left}
+.tbl{display:grid;gap:14px}
+.pair{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline;padding:8px 0;border-top:1px solid var(--line)}
+.pair:first-child{border-top:0}
+.tag{font:12px var(--mono);background:var(--accent-soft);color:var(--accent);padding:2px 6px;border-radius:4px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Wegweiser</h1>
+    <p class="muted" id="sub"></p>
+  </header>
+  <div class="warnbar hidden" id="privbar">Enthält Privates. Nicht teilen, nicht hochladen, nicht committen.</div>
+  <div class="stats" id="stats"></div>
+  <div class="bar" role="group" aria-label="Filter" id="filters"></div>
+  <div class="bar">
+    <input type="search" id="q" placeholder="Suchen: Titel oder Thema" aria-label="Suchen">
+    <div role="tablist" aria-label="Ansicht" class="bar">
+      <button role="tab" aria-selected="true" data-tab="graph">Netz</button>
+      <button role="tab" aria-selected="false" data-tab="luecken">Lücken</button>
+      <button role="tab" aria-selected="false" data-tab="liste">Liste</button>
+    </div>
+  </div>
+
+  <div class="main" id="tab-graph">
+    <div>
+      <svg id="svg" viewBox="0 0 1000 640" role="img" aria-label="Netz der Projekte, Apps, Konzepte und Werkzeuge. Eine Liste mit denselben Inhalten steht im Reiter Liste."></svg>
+      <div class="legend" id="legend" style="margin-top:8px"></div>
+    </div>
+    <aside class="card" id="detail" aria-live="polite"><p class="muted">Tippe im Netz auf einen Punkt oder wähle ihn in der Liste. Dann siehst du Fundorte, offene Punkte, Verknüpfungen und Vorschläge.</p></aside>
+  </div>
+
+  <div class="tbl hidden" id="tab-luecken"></div>
+  <div class="tbl hidden" id="tab-liste"></div>
+</div>
+
+<script>
+const D = {"erzeugt":"2026-11-24","mitPrivat":false,"notes":[{"id":"app-algorithmen-meinung","titel":"App · Algorithmen & Meinung","typ":"app","bereich":"Medien","sichtbarkeit":"oeffentlich","status":"ok","tags":["algorithmen","medienkompetenz","demokratie","politische-bildung","offline-html"],"versionHier":"v2","versionAktuell":"v2","fundorte":["lokal: algorithmen-meinung.html"],"offen":["Vierten Radikalisierungspfad entscheiden"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Lernreise zu Algorithmen und Meinungsbildung.","links":["demokratie-ag"],"privat":false},{"id":"app-das-ging-prompt-modell","titel":"App · Das ging prompt! Modell","typ":"app","bereich":"Konzept","sichtbarkeit":"oeffentlich","status":"ueberarbeiten","tags":["prompt","ki","klasse3-4","offline-html"],"versionHier":"v1 / v2 / v2-2","versionAktuell":"Stand unbekannt (Ordner Das-ging-prompt)","fundorte":["lokal: Ordner Das-ging-prompt"],"offen":["Aktuellen Stand klären"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Interaktives Modell zum Drei-Dimensionen-Ansatz.","links":["das-ging-prompt","prompt-literalitaet"],"privat":false},{"id":"app-demokratie-kids","titel":"App · Demokratie-Kids","typ":"app","bereich":"Medien","sichtbarkeit":"oeffentlich","status":"ueberarbeiten","tags":["demokratie","politische-bildung","klasse3-4","offline-html","gamification","datenschutz"],"versionHier":"v4 bis v7 (in Projekten)","versionAktuell":"v20 (Repo)","fundorte":["Repo: demokratie-kids-v20.html"],"offen":["In den Projekten ersetzen","Konzepthandbuch mit Beutelsbacher-Prüfung"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Lern-App zu Demokratie für Klasse 3 und 4.","links":["demokratie-ag","skill-kinder-lernapp","beutelsbacher-konsens","datensparsamkeit"],"privat":false},{"id":"app-fakefighter-demo","titel":"App · FakeFighter Demo","typ":"app","bereich":"Medien","sichtbarkeit":"oeffentlich","status":"ueberarbeiten","tags":["desinformation","spiel","politische-bildung","offline-html"],"versionHier":"v2 / v3(5) / v3(8)","versionAktuell":"Stand unbekannt (Ordner FakeFighter)","fundorte":["lokal: Ordner FakeFighter"],"offen":["Aktuellen Stand klären"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Demo zum kooperativen Ermittlungsspiel.","links":["fake-fighter-catcher"],"privat":false},{"id":"app-hinter-den-kulissen","titel":"App · Hinter den Kulissen","typ":"app","bereich":"Medien","sichtbarkeit":"oeffentlich","status":"ueberarbeiten","tags":["medienkompetenz","demokratie","offline-html"],"versionHier":"v2 / v3 / v4(1)","versionAktuell":"v4","fundorte":["lokal: hinter-den-kulissen-v4.html"],"offen":["In den Projekten ersetzen"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Lern-App; liegt in mehreren Projekten in verschiedenen Ständen.","links":["demokratie-ag","netzchecker-kids"],"privat":false},{"id":"app-netzchecker-kids","titel":"App · NetzChecker Kids","typ":"app","bereich":"Medien","sichtbarkeit":"oeffentlich","status":"ueberarbeiten","tags":["medienkompetenz","klasse3-4","offline-html","gamification","datenschutz"],"versionHier":"v1_0_6 bis v1_0_6_8 (in Projekten)","versionAktuell":"v1_1_0 (lokal)","fundorte":["lokal: netzchecker-kids-v1_1_0.html"],"offen":["In allen Projekten durch den aktuellen Stand ersetzen"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Einzeldatei-HTML mit mehreren Themenwelten.","links":["netzchecker-kids","skill-kinder-lernapp","datensparsamkeit"],"privat":false},{"id":"app-saubere-heimat","titel":"App · Saubere Heimat","typ":"app","bereich":"Medien","sichtbarkeit":"oeffentlich","status":"ueberarbeiten","tags":["desinformation","politische-bildung","spiel","offline-html"],"versionHier":"v0.3.1","versionAktuell":"v0.4","fundorte":["lokal: saubere-heimat-v0.4.html"],"offen":["Mobil-Ansicht","Begleitheft ergänzen"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Zweites Szenario zu Fake Fighter.","links":["fake-fighter-catcher","demokratie-ag"],"privat":false},{"id":"app-spurwechsel","titel":"App · Spurwechsel","typ":"app","bereich":"Medien","sichtbarkeit":"oeffentlich","status":"ueberarbeiten","tags":["demokratie","politische-bildung","offline-html"],"versionHier":"v0.2 / v0.4","versionAktuell":"v0.4","fundorte":["lokal: spurwechsel_wegweiser_v0_4.html"],"offen":["In den Projekten ersetzen"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Wegweiser-App zu Demokratie.","links":["demokratie-ag"],"privat":false},{"id":"beutelsbacher-konsens","titel":"Beutelsbacher Konsens","typ":"konzept","bereich":"Konzept","sichtbarkeit":"oeffentlich","status":"","tags":["demokratie","politische-bildung"],"versionHier":"","versionAktuell":"","fundorte":[],"offen":[],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Grundsätze politischer Bildung: Überwältigungsverbot, Kontroversitätsgebot, Schülerorientierung.","links":[],"privat":false},{"id":"datensparsamkeit","titel":"Datensparsamkeit","typ":"konzept","bereich":"Konzept","sichtbarkeit":"oeffentlich","status":"","tags":["datenschutz","offline-html"],"versionHier":"","versionAktuell":"","fundorte":[],"offen":[],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Nur erfassen, was gebraucht wird; keine externen Aufrufe; Daten bleiben auf dem Gerät.","links":["skill-kinder-lernapp"],"privat":false},{"id":"einfache-sprache","titel":"Einfache Sprache","typ":"konzept","bereich":"Konzept","sichtbarkeit":"oeffentlich","status":"","tags":["barrierefreiheit","politische-bildung","klasse3-4"],"versionHier":"","versionAktuell":"","fundorte":[],"offen":["Umschalter in „Was oben landet“ fehlt"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Umschalter für einfache Sprache als offene Baustelle.","links":[],"privat":false},{"id":"ki-muendigkeit","titel":"KI-Mündigkeit","typ":"konzept","bereich":"Konzept","sichtbarkeit":"oeffentlich","status":"","tags":["ki","konzeptpapier","wissenschaft"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Projekt Wissensbasis"],"offen":["Zitat prüfen","One-Pager A4"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Fundament-Papier zur Mündigkeit im Umgang mit KI.","links":[],"privat":false},{"id":"prompt-literalitaet","titel":"Prompt-Literalität (Drei Dimensionen)","typ":"konzept","bereich":"Konzept","sichtbarkeit":"oeffentlich","status":"","tags":["prompt","ki","klasse3-4","wissenschaft"],"versionHier":"","versionAktuell":"","fundorte":[],"offen":[],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Was will ich? Wie sage ich es? Stimmt das?","links":[],"privat":false},{"id":"das-ging-prompt","titel":"Konzept · Das ging prompt!","typ":"projekt","bereich":"Konzept","sichtbarkeit":"oeffentlich","status":"ueberarbeiten","tags":["prompt","ki","konzeptpapier","klasse3-4","wissenschaft"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Projekt Das ging Prompt (9 Dateien)","lokal: Ordner Das-ging-prompt"],"offen":["Pilotierung in einer Klasse","Beobachtungsbogen","Quellenprüfung","Poster-Tippfehler","Zeitschriftenartikel entscheiden"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Frühe Prompt-Literalität in Klasse 3 und 4 mit dem Drei-Dimensionen-Modell.","links":["app-das-ging-prompt-modell","prompt-literalitaet","ki-muendigkeit"],"privat":false},{"id":"demokratie-ag","titel":"Medien · Demokratie & Meinungsbildung","typ":"projekt","bereich":"Medien","sichtbarkeit":"oeffentlich","status":"ueberarbeiten","tags":["demokratie","politische-bildung","medienkompetenz","gamification","klasse3-4"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Projekt Demokratie AG (11 Dateien)"],"offen":["Anweisungsfeld leeren und echte Anweisung schreiben","Dateien auf aktuelle Versionen bringen","Konzepthandbuch mit Prüfung nach Beutelsbacher Konsens","Umschalter für einfache Sprache"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Politische Bildung von Klasse 3 bis zur Oberstufe, Heimat der meisten Lernreisen und Simulationen.","links":["app-demokratie-kids","app-hinter-den-kulissen","app-algorithmen-meinung","app-spurwechsel","app-saubere-heimat","beutelsbacher-konsens","einfache-sprache"],"privat":false},{"id":"emhob-mobil","titel":"Konzept · EMHOB Mobil","typ":"projekt","bereich":"Konzept","sichtbarkeit":"oeffentlich","status":"leer","tags":["konzeptpapier"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Projekt EMHOB Mobil (0 Dateien)","lokal: EMHOB-Dokumente (docx, md)"],"offen":["Konzept hochladen oder als abgeschlossen betrachten"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Konzept für ein mobiles digitales Angebot im EMHOB-Netzwerk. Die Arbeit liegt lokal.","links":[],"privat":false},{"id":"fake-fighter-catcher","titel":"Medien · Fake Fighter & Fake Catcher","typ":"projekt","bereich":"Medien","sichtbarkeit":"oeffentlich","status":"ueberarbeiten","tags":["desinformation","medienkompetenz","spiel","politische-bildung"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: bisher in Projekt Wissensbasis (ca. 12 Dateien)"],"offen":["Eigenes Projekt anlegen","Pitch-Version","Pilotierung","Veröffentlichung klären","Fake Catcher: Variante A oder B als Standard"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Zwei verwandte Spiele gegen Desinformation: Ermittlungsspiel ab 12 und Sachunterricht Klasse 4.","links":["app-fakefighter-demo","app-saubere-heimat"],"privat":false},{"id":"gew-gewerkschaftstag","titel":"Dienst · GEW Gewerkschaftstag","typ":"projekt","bereich":"Dienst","sichtbarkeit":"intern","status":"ok","tags":["gewerkschaft","gremien"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Projekt GEW (1 Datei)"],"offen":["Anträge, Tagesordnung und Geschäftsordnung hochladen"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Sparringspartner für den Gewerkschaftstag mit Perspektivwechsel zu Entscheidungen.","links":[],"privat":false},{"id":"ideenspeicher","titel":"Werkzeug · Ideenspeicher","typ":"projekt","bereich":"Werkzeug","sichtbarkeit":"oeffentlich","status":"ok","tags":["uebersicht","ideen"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Projekt Geplante Projekte (leer)"],"offen":["Ideen als kurze Notiz ablegen"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Eingang für neue Ideen, bevor sie in ein Fachprojekt wandern.","links":["netzchecker-kids"],"privat":false},{"id":"ki-tipps","titel":"Werkzeug · KI-Tipps","typ":"projekt","bereich":"Werkzeug","sichtbarkeit":"oeffentlich","status":"leer","tags":["prompt","ki","offline-ki"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Projekte Token sparen und Offline Ki"],"offen":["Prompt-Optimierer als Anweisung einsetzen","Projekte zusammenlegen"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Prompt-Optimierer für Grundschul-Prompts und Ideen zur Offline-KI.","links":[],"privat":false},{"id":"kimeko","titel":"Medien · KiMeKo Projekttage","typ":"projekt","bereich":"Medien","sichtbarkeit":"oeffentlich","status":"ok","tags":["medienkompetenz","klasse4","arbeitsheft","offline-html"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Projekt KiMeKo (2 Dateien)"],"offen":["Begleitdokumentation hierher holen","Rolle und Urheberschaft gegenüber der Uni schriftlich klären"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Projekttage für Klasse 4 mit interaktivem Offline-Arbeitsheft zu sechs Themen.","links":["netzchecker-kids"],"privat":false},{"id":"klasse-3a-projektwoche","titel":"Klasse 3a · Projektwoche","typ":"projekt","bereich":"Klasse","sichtbarkeit":"oeffentlich","status":"leer","tags":["klasse3","projektwoche"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Projekt Projektwoche (leer)","lokal: Feedback_Projektwoche.html"],"offen":["Prüfen, ob Chats drinliegen","sonst löschen"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Angelegt vor den Sommerferien, ohne Anweisung und ohne Dateien.","links":["klasse-3a-schuljahr"],"privat":false},{"id":"klasse-3a-schuljahr","titel":"Klasse 3a · Schuljahr 26/27","typ":"projekt","bereich":"Klasse","sichtbarkeit":"oeffentlich","status":"ok","tags":["klasse3","elternkommunikation","datenschutz","organisation"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Projekt Schuljahr 2026/2027","lokal: Dokumente\\Klasse 3a"],"offen":["Jahresplanung, Lernwörter, Materialliste und Elternabend-Einladung hochladen (ohne Namenslisten)"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Arbeitsraum als Klassenlehrer mit vier Modulen: Elternbriefe, Organisation, Arbeitsblätter, Dokumentation. Keine Schülernamen mit Noten oder Beobachtungen.","links":["skill-elternkommunikation","datensparsamkeit"],"privat":false},{"id":"mb-dienstlich","titel":"Dienst · Medienberatung","typ":"projekt","bereich":"Dienst","sichtbarkeit":"intern","status":"leer","tags":["medienberatung","dienstlich"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Projekt MB Dienstlich (2 Dateien)","lokal: Systemprompts"],"offen":["Systemprompt als Anweisung einsetzen","Medienberaterschlüssel und Aufgaben hochladen"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Raum für die Medienberatung; bisher fast leer.","links":[],"privat":false},{"id":"medienscouts-nrw","titel":"Medien · Medienscouts NRW","typ":"projekt","bereich":"Medien","sichtbarkeit":"oeffentlich","status":"leer","tags":["medienkompetenz"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Projekt Medienscouts NRW (leer)"],"offen":["Als Idee notieren und Projekt löschen oder starten"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Nur angelegt, ohne Inhalt.","links":[],"privat":false},{"id":"netzchecker-kids","titel":"Medien · NetzChecker Kids","typ":"projekt","bereich":"Medien","sichtbarkeit":"oeffentlich","status":"ueberarbeiten","tags":["medienkompetenz","klasse3-4","offline-html","gamification","datenschutz","foerderung"],"versionHier":"v1_0_6 bis v1_0_6_8","versionAktuell":"v1_1_0","fundorte":["claude.ai: Projekt NetzcheckerKids (8 Dateien)","lokal: netzchecker-kids-v1_1_0.html"],"offen":["App im Projekt durch v1_1_0 ersetzen","PIN-Wert vereinheitlichen","Impressum und Träger klären","QR-Klassenauswertung bauen","Liste aller Quizfragen","Welt-Namen festlegen"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Offline-Lern-App zur Medienkompetenz für Klasse 3 bis 5 als einzelne HTML-Datei ohne Login und Server.","links":["app-netzchecker-kids","kimeko","app-hinter-den-kulissen","datensparsamkeit"],"privat":false},{"id":"ogs-kann-ich","titel":"Material · OGS Kann-Ich (eduki)","typ":"projekt","bereich":"Material","sichtbarkeit":"oeffentlich","status":"ok","tags":["prompt","prompt-generator","ki","offline-html","eduki","datenschutz"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Projekt OGS Kann Ich (3 Dateien)"],"offen":["Sankt-Martin-Version und Checkliste nachladen","rechtliche Punkte vor dem ersten Verkauf abhaken"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Prompt-Generatoren für OGS-Mitarbeitende, die lokal im Browser laufen.","links":["datensparsamkeit"],"privat":false},{"id":"projektdatenbank","titel":"Werkzeug · Projektdatenbank","typ":"projekt","bereich":"Werkzeug","sichtbarkeit":"oeffentlich","status":"ueberarbeiten","tags":["uebersicht","portfolio"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Projekt Datenbank (26 Dateien)"],"offen":["Auf MD-Zusammenfassungen reduzieren","Anweisung ergänzen","HTML-Apps in Fachprojekte verschieben"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Überblick über alle Projekte; enthält teils alte Stände.","links":["netzchecker-kids","das-ging-prompt","wissensbasis"],"privat":false},{"id":"qa-froschenteich","titel":"Schule · QA Froschenteich","typ":"projekt","bereich":"Schule","sichtbarkeit":"oeffentlich","status":"ok","tags":["schulentwicklung","qualitaetsanalyse","medienkompetenz","demokratie"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Projekt QA Froschenteich (1 Datei)","lokal: QA-Feedback-Froschenteich"],"offen":["Anweisung präzisieren","QA-Abgleich als Datei hochladen"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Vorbereitung auf die Qualitätsanalyse; Grundlage ist das Schulprogramm.","links":[],"privat":false},{"id":"wissensbasis","titel":"Konzept · KI-Mündigkeit & Portfolio","typ":"projekt","bereich":"Konzept","sichtbarkeit":"oeffentlich","status":"ueberarbeiten","tags":["ki","konzeptpapier","portfolio","foerderung"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Projekt Wissensbasis (27 Dateien)"],"offen":["Fake-Dateien auslagern","Beschreibung an Anweisung anpassen","KI-Mündigkeit One-Pager","Anträge und Partner ordnen"],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Sammelbecken für Konzeptentwicklung an der Schnittstelle Demokratie, digitale Bildung und KI-Literacy.","links":["ki-muendigkeit","das-ging-prompt","fake-fighter-catcher","skill-peter-html-design","skill-peter-dokumentenproduktion"],"privat":false},{"id":"skill-elternkommunikation","titel":"Skill · elternkommunikation","typ":"skill","bereich":"Werkzeug","sichtbarkeit":"oeffentlich","status":"ok","tags":["elternkommunikation","klasse3"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Skill elternkommunikation"],"offen":[],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Elternbriefe und Schulkommunikation, NRW-konform.","links":["klasse-3a-schuljahr"],"privat":false},{"id":"skill-kinder-lernapp","titel":"Skill · kinder-lernapp","typ":"skill","bereich":"Werkzeug","sichtbarkeit":"oeffentlich","status":"ok","tags":["klasse3-4","offline-html","datenschutz","barrierefreiheit"],"versionHier":"","versionAktuell":"","fundorte":["Repo: .claude/skills/kinder-lernapp"],"offen":[],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Prüfkriterien und audit.cjs für Lern-Apps der Klassen 3 und 4.","links":["datensparsamkeit"],"privat":false},{"id":"skill-peter-dokumentenproduktion","titel":"Skill · peter-dokumentenproduktion","typ":"skill","bereich":"Werkzeug","sichtbarkeit":"oeffentlich","status":"ok","tags":["konzeptpapier","dokumente"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Projekt Wissensbasis"],"offen":[],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Vorgaben für die Dokumentenproduktion.","links":[],"privat":false},{"id":"skill-peter-html-design","titel":"Skill · peter-html-design","typ":"skill","bereich":"Werkzeug","sichtbarkeit":"oeffentlich","status":"ok","tags":["offline-html","design"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Projekt Wissensbasis"],"offen":[],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Designvorgaben für deine HTML-Seiten.","links":[],"privat":false},{"id":"skill-release-check-html","titel":"Skill · release-check-html","typ":"skill","bereich":"Werkzeug","sichtbarkeit":"oeffentlich","status":"ok","tags":["offline-html","datenschutz"],"versionHier":"","versionAktuell":"","fundorte":["claude.ai: Skill release-check-html"],"offen":[],"quelle":"Projektlandkarte, Stand 23.09.2026 (ungeprüft)","kurz":"Nummerierung, Beschriftung und technische Datenschutz-Hygiene vor jeder Auslieferung.","links":[],"privat":false}],"edges":[["app-algorithmen-meinung","demokratie-ag"],["app-das-ging-prompt-modell","das-ging-prompt"],["app-das-ging-prompt-modell","prompt-literalitaet"],["app-demokratie-kids","demokratie-ag"],["app-demokratie-kids","skill-kinder-lernapp"],["app-demokratie-kids","beutelsbacher-konsens"],["app-demokratie-kids","datensparsamkeit"],["app-fakefighter-demo","fake-fighter-catcher"],["app-hinter-den-kulissen","demokratie-ag"],["app-hinter-den-kulissen","netzchecker-kids"],["app-netzchecker-kids","netzchecker-kids"],["app-netzchecker-kids","skill-kinder-lernapp"],["app-netzchecker-kids","datensparsamkeit"],["app-saubere-heimat","fake-fighter-catcher"],["app-saubere-heimat","demokratie-ag"],["app-spurwechsel","demokratie-ag"],["datensparsamkeit","skill-kinder-lernapp"],["das-ging-prompt","prompt-literalitaet"],["das-ging-prompt","ki-muendigkeit"],["beutelsbacher-konsens","demokratie-ag"],["demokratie-ag","einfache-sprache"],["ideenspeicher","netzchecker-kids"],["kimeko","netzchecker-kids"],["klasse-3a-projektwoche","klasse-3a-schuljahr"],["klasse-3a-schuljahr","skill-elternkommunikation"],["datensparsamkeit","klasse-3a-schuljahr"],["datensparsamkeit","netzchecker-kids"],["datensparsamkeit","ogs-kann-ich"],["netzchecker-kids","projektdatenbank"],["das-ging-prompt","projektdatenbank"],["projektdatenbank","wissensbasis"],["ki-muendigkeit","wissensbasis"],["das-ging-prompt","wissensbasis"],["fake-fighter-catcher","wissensbasis"],["skill-peter-html-design","wissensbasis"],["skill-peter-dokumentenproduktion","wissensbasis"]],"luecken":{"einzel":["emhob-mobil","gew-gewerkschaftstag","ki-tipps","mb-dienstlich","medienscouts-nrw","qa-froschenteich","skill-release-check-html"],"schwach":["app-algorithmen-meinung","app-fakefighter-demo","app-spurwechsel","einfache-sprache","ideenspeicher","kimeko","klasse-3a-projektwoche","ogs-kann-ich","skill-elternkommunikation","skill-peter-dokumentenproduktion","skill-peter-html-design"],"veraltet":["app-das-ging-prompt-modell","app-demokratie-kids","app-fakefighter-demo","app-hinter-den-kulissen","app-netzchecker-kids","app-saubere-heimat","app-spurwechsel","netzchecker-kids"],"defekt":[],"vorschlaege":[{"a":"app-demokratie-kids","b":"app-netzchecker-kids","tags":["klasse3-4","offline-html","gamification","datenschutz"]},{"a":"app-demokratie-kids","b":"netzchecker-kids","tags":["klasse3-4","offline-html","gamification","datenschutz"]},{"a":"app-fakefighter-demo","b":"app-saubere-heimat","tags":["desinformation","spiel","politische-bildung","offline-html"]},{"a":"app-algorithmen-meinung","b":"app-demokratie-kids","tags":["demokratie","politische-bildung","offline-html"]},{"a":"app-algorithmen-meinung","b":"app-hinter-den-kulissen","tags":["medienkompetenz","demokratie","offline-html"]},{"a":"app-algorithmen-meinung","b":"app-spurwechsel","tags":["demokratie","politische-bildung","offline-html"]},{"a":"app-das-ging-prompt-modell","b":"ogs-kann-ich","tags":["prompt","ki","offline-html"]},{"a":"app-demokratie-kids","b":"app-spurwechsel","tags":["demokratie","politische-bildung","offline-html"]},{"a":"app-netzchecker-kids","b":"demokratie-ag","tags":["medienkompetenz","klasse3-4","gamification"]},{"a":"demokratie-ag","b":"netzchecker-kids","tags":["medienkompetenz","gamification","klasse3-4"]},{"a":"netzchecker-kids","b":"skill-kinder-lernapp","tags":["klasse3-4","offline-html","datenschutz"]},{"a":"app-algorithmen-meinung","b":"app-fakefighter-demo","tags":["politische-bildung","offline-html"]},{"a":"app-algorithmen-meinung","b":"app-netzchecker-kids","tags":["medienkompetenz","offline-html"]},{"a":"app-algorithmen-meinung","b":"app-saubere-heimat","tags":["politische-bildung","offline-html"]},{"a":"app-algorithmen-meinung","b":"beutelsbacher-konsens","tags":["demokratie","politische-bildung"]},{"a":"app-algorithmen-meinung","b":"fake-fighter-catcher","tags":["medienkompetenz","politische-bildung"]},{"a":"app-algorithmen-meinung","b":"kimeko","tags":["medienkompetenz","offline-html"]},{"a":"app-algorithmen-meinung","b":"netzchecker-kids","tags":["medienkompetenz","offline-html"]},{"a":"app-algorithmen-meinung","b":"qa-froschenteich","tags":["medienkompetenz","demokratie"]},{"a":"app-das-ging-prompt-modell","b":"app-demokratie-kids","tags":["klasse3-4","offline-html"]},{"a":"app-das-ging-prompt-modell","b":"app-netzchecker-kids","tags":["klasse3-4","offline-html"]},{"a":"app-das-ging-prompt-modell","b":"ki-tipps","tags":["prompt","ki"]},{"a":"app-das-ging-prompt-modell","b":"netzchecker-kids","tags":["klasse3-4","offline-html"]},{"a":"app-das-ging-prompt-modell","b":"skill-kinder-lernapp","tags":["klasse3-4","offline-html"]},{"a":"app-demokratie-kids","b":"app-fakefighter-demo","tags":["politische-bildung","offline-html"]},{"a":"app-demokratie-kids","b":"app-hinter-den-kulissen","tags":["demokratie","offline-html"]},{"a":"app-demokratie-kids","b":"app-saubere-heimat","tags":["politische-bildung","offline-html"]},{"a":"app-demokratie-kids","b":"einfache-sprache","tags":["politische-bildung","klasse3-4"]},{"a":"app-demokratie-kids","b":"ogs-kann-ich","tags":["offline-html","datenschutz"]},{"a":"app-demokratie-kids","b":"skill-release-check-html","tags":["offline-html","datenschutz"]}]}};
+const COL = {Klasse:'#c2410c',Medien:'#2d6a57',Konzept:'#7c3aed',Schule:'#0369a1',Material:'#a16207',Dienst:'#be123c',Werkzeug:'#64748b',Sonstiges:'#6b7280'};
+const TYP = {projekt:'Projekt',app:'App',konzept:'Konzept',skill:'Skill'};
+const STATUS = {ok:'in Ordnung',ueberarbeiten:'überarbeiten',leer:'leer oder fast leer'};
+const byId = Object.fromEntries(D.notes.map(n => [n.id, n]));
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs = {}, text) => { const e = document.createElementNS(tag === 'div' || tag === 'button' || tag === 'p' || tag === 'span' || tag === 'h2' || tag === 'dl' || tag === 'dt' || tag === 'dd' || tag === 'ul' || tag === 'li' ? 'http://www.w3.org/1999/xhtml' : NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; };
+const h = (tag, attrs = {}, text) => { const e = document.createElement(tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; };
+
+document.getElementById('sub').textContent = `Stand ${D.erzeugt}. Quelle der Einträge: Projektlandkarte vom 23.09.2026, nicht neu geprüft. Was hier fehlt, existiert womöglich trotzdem.`;
+if (D.mitPrivat) { document.getElementById('privbar').classList.remove('hidden'); }
+
+// Grad
+const deg = {}; D.notes.forEach(n => deg[n.id] = 0); D.edges.forEach(([a, b]) => { deg[a]++; deg[b]++; });
+const nb = id => D.edges.filter(e => e.includes(id)).map(e => e[0] === id ? e[1] : e[0]);
+
+// Kennzahlen
+const L = D.luecken;
+const stats = [[D.notes.length, 'Notizen'], [D.edges.length, 'Verknüpfungen'], [L.einzel.length, 'ohne Verknüpfung'], [L.veraltet.length, 'Stände prüfen'], [L.vorschlaege.length, 'Verknüpfungs-Vorschläge']];
+stats.forEach(([n, t]) => { const d = h('div'); d.append(h('b', {}, String(n)), h('span', {}, t)); document.getElementById('stats').append(d); });
+
+// Filter
+const bereiche = [...new Set(D.notes.map(n => n.bereich))];
+const aktiv = new Set(bereiche);
+const fbox = document.getElementById('filters');
+bereiche.forEach(b => {
+  const btn = h('button', {class: 'chipbtn', 'aria-pressed': 'true', type: 'button'});
+  const dot = h('span', {class: 'dot'}); dot.style.background = COL[b] || COL.Sonstiges;
+  btn.append(dot, document.createTextNode(b));
+  btn.addEventListener('click', () => { aktiv.has(b) ? aktiv.delete(b) : aktiv.add(b); btn.setAttribute('aria-pressed', aktiv.has(b)); render(); });
+  fbox.append(btn);
+});
+
+// Legende
+const leg = document.getElementById('legend');
+[['Kreis', 'Projekt'], ['Quadrat', 'App'], ['Raute', 'Konzept'], ['Dreieck', 'Skill']].forEach(([f, t]) => leg.append(h('span', {}, f + ' = ' + t)));
+leg.append(h('span', {}, 'Dicker Rand = angewählt. Je mehr Verknüpfungen, desto größer.'));
+
+// Layout (einfache Kräfte-Simulation)
+const W = 1000, H = 640;
+const nodes = D.notes.map((n, i) => ({...n, x: W / 2 + Math.cos(i * 2.4) * (60 + i * 8), y: H / 2 + Math.sin(i * 2.4) * (40 + i * 6), vx: 0, vy: 0}));
+const idx = Object.fromEntries(nodes.map((n, i) => [n.id, i]));
+const edges = D.edges.map(([a, b]) => ({s: nodes[idx[a]], t: nodes[idx[b]]}));
+function tick(alpha) {
+  for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+    const a = nodes[i], b = nodes[j]; let dx = a.x - b.x, dy = a.y - b.y; const d2 = dx * dx + dy * dy + 0.01, d = Math.sqrt(d2);
+    const f = 11000 / d2 * alpha; a.vx += dx / d * f; a.vy += dy / d * f; b.vx -= dx / d * f; b.vy -= dy / d * f;
+  }
+  for (const e of edges) { const dx = e.t.x - e.s.x, dy = e.t.y - e.s.y, d = Math.sqrt(dx * dx + dy * dy) + 0.01, f = (d - 130) * 0.04 * alpha;
+    e.s.vx += dx / d * f; e.s.vy += dy / d * f; e.t.vx -= dx / d * f; e.t.vy -= dy / d * f; }
+  for (const n of nodes) {
+    n.vx += (W / 2 - n.x) * 0.0025 * alpha; n.vy += (H / 2 - n.y) * 0.004 * alpha;
+    if (n.fixed) { n.vx = n.vy = 0; continue; }
+    n.vx *= 0.62; n.vy *= 0.62; n.x = Math.max(60, Math.min(W - 150, n.x + n.vx)); n.y = Math.max(30, Math.min(H - 30, n.y + n.vy));
+  }
+}
+for (let i = 0; i < 600; i++) tick(1 - i / 660);
+
+// Zeichnen
+const svg = document.getElementById('svg');
+const gE = el('g'), gN = el('g'); svg.append(gE, gN);
+const eEls = edges.map(e => { const l = el('line', {class: 'edge'}); gE.append(l); return l; });
+const radius = n => 9 + Math.min(deg[n.id], 6) * 1.6;
+function shapeFor(n) {
+  const r = radius(n), c = COL[n.bereich] || COL.Sonstiges;
+  let s;
+  if (n.typ === 'app') s = el('rect', {x: -r, y: -r, width: 2 * r, height: 2 * r, rx: 3});
+  else if (n.typ === 'konzept') s = el('polygon', {points: `0,${-r * 1.3} ${r * 1.3},0 0,${r * 1.3} ${-r * 1.3},0`});
+  else if (n.typ === 'skill') s = el('polygon', {points: `0,${-r * 1.2} ${r * 1.15},${r * .9} ${-r * 1.15},${r * .9}`});
+  else s = el('circle', {r});
+  s.setAttribute('class', 'shape'); s.setAttribute('fill', c); return s;
+}
+const nEls = nodes.map(n => {
+  const g = el('g', {class: 'node', tabindex: '0', role: 'button', 'aria-label': `${n.titel}, ${TYP[n.typ] || n.typ}, ${deg[n.id]} Verknüpfungen`});
+  g.append(shapeFor(n));
+  const t = el('text', {x: radius(n) + 5, y: 4}); t.textContent = n.titel.replace(/^(App|Skill|Medien|Konzept|Klasse|Schule|Material|Dienst|Werkzeug) · /, '');
+  g.append(t);
+  g.addEventListener('click', () => select(n.id));
+  g.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); select(n.id); } });
+  // Ziehen
+  g.addEventListener('pointerdown', ev => {
+    g.setPointerCapture(ev.pointerId); n.fixed = true; let moved = false;
+    const pt = e => { const r = svg.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H]; };
+    const mv = e => { moved = true; [n.x, n.y] = pt(e); for (let i = 0; i < 6; i++) tick(.25); place(); };
+    const up = () => { n.fixed = false; g.removeEventListener('pointermove', mv); g.removeEventListener('pointerup', up); if (moved) ev.preventDefault(); };
+    g.addEventListener('pointermove', mv); g.addEventListener('pointerup', up);
+  });
+  gN.append(g); return g;
+});
+function place() {
+  nodes.forEach((n, i) => nEls[i].setAttribute('transform', `translate(${n.x.toFixed(1)},${n.y.toFixed(1)})`));
+  edges.forEach((e, i) => { eEls[i].setAttribute('x1', e.s.x); eEls[i].setAttribute('y1', e.s.y); eEls[i].setAttribute('x2', e.t.x); eEls[i].setAttribute('y2', e.t.y); });
+}
+place();
+
+let sel = null;
+function render() {
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  const nachbarn = sel ? new Set([sel, ...nb(sel)]) : null;
+  nodes.forEach((n, i) => {
+    const sichtbar = aktiv.has(n.bereich);
+    const treffer = !q || (n.titel + ' ' + n.tags.join(' ')).toLowerCase().includes(q);
+    nEls[i].classList.toggle('hidden', !sichtbar);
+    nEls[i].classList.toggle('dim', sichtbar && (!treffer || (nachbarn && !nachbarn.has(n.id))));
+    nEls[i].classList.toggle('sel', n.id === sel);
+    nEls[i].classList.toggle('nbr', !!nachbarn && nachbarn.has(n.id));
+  });
+  edges.forEach((e, i) => {
+    const sichtbar = aktiv.has(e.s.bereich) && aktiv.has(e.t.bereich);
+    eEls[i].classList.toggle('hidden', !sichtbar);
+    const heiss = sel && (e.s.id === sel || e.t.id === sel);
+    eEls[i].classList.toggle('hot', !!heiss);
+    eEls[i].classList.toggle('dim', !!sel && !heiss);
+  });
+}
+document.getElementById('q').addEventListener('input', render);
+
+function linkBtn(id) { const b = h('button', {class: 'link', type: 'button'}, byId[id] ? byId[id].titel : id); b.addEventListener('click', () => { showTab('graph'); select(id); }); return b; }
+function listWith(items) { const ul = h('ul'); items.forEach(i => { const li = h('li'); li.append(i); ul.append(li); }); return ul; }
+
+function select(id) {
+  sel = id; const n = byId[id]; const d = document.getElementById('detail'); d.replaceChildren();
+  d.append(h('h2', {}, n.titel));
+  const meta = h('p'); meta.append(h('span', {class: 'tag'}, (TYP[n.typ] || n.typ) + ' · ' + n.bereich));
+  if (n.status) meta.append(document.createTextNode(' '), h('span', {class: 'chip c-' + n.status}, STATUS[n.status] || n.status));
+  if (n.sichtbarkeit === 'intern') meta.append(document.createTextNode(' '), h('span', {class: 'chip c-idle'}, 'intern'));
+  if (n.privat) meta.append(document.createTextNode(' '), h('span', {class: 'chip c-bad'}, 'privat'));
+  d.append(meta);
+  if (n.kurz) d.append(h('p', {}, n.kurz));
+  const dl = h('dl'); const add = (t, content) => { dl.append(h('dt', {}, t)); const dd = h('dd'); dd.append(content); dl.append(dd); };
+  if (n.versionHier || n.versionAktuell) {
+    const v = h('div'); v.append(h('div', {}, 'Hier: ' + (n.versionHier || '–')), h('div', {}, 'Aktuell: ' + (n.versionAktuell || '–')));
+    if (L.veraltet.includes(n.id)) v.append(h('span', {class: 'chip c-warn'}, 'Stand prüfen'));
+    add('Version', v);
+  }
+  if (n.fundorte.length) add('Fundorte', listWith(n.fundorte.map(f => document.createTextNode(f))));
+  if (n.offen.length) add('Offen', listWith(n.offen.map(f => document.createTextNode(f))));
+  const aus = n.links.filter(l => byId[l]);
+  const ein = D.notes.filter(m => m.links.includes(n.id)).map(m => m.id);
+  add('Verweist auf', aus.length ? listWith(aus.map(linkBtn)) : document.createTextNode('nichts'));
+  add('Wird verwiesen von', ein.length ? listWith(ein.map(linkBtn)) : document.createTextNode('nichts'));
+  const vs = L.vorschlaege.filter(p => p.a === id || p.b === id);
+  if (vs.length) add('Verknüpfen? (gleiche Themen)', listWith(vs.map(p => { const o = p.a === id ? p.b : p.a; const s = h('span'); s.append(linkBtn(o), document.createTextNode(' '), h('span', {class: 'tag'}, p.tags.join(', '))); return s; })));
+  if (n.tags.length) add('Themen', document.createTextNode(n.tags.join(', ')));
+  if (n.quelle) add('Quelle', document.createTextNode(n.quelle));
+  d.append(dl);
+  render();
+}
+
+// Lücken
+(function () {
+  const root = document.getElementById('tab-luecken');
+  const block = (titel, hinweis, items) => {
+    const c = h('div', {class: 'card'}); c.append(h('h2', {}, titel), h('p', {class: 'muted'}, hinweis));
+    if (!items.length) c.append(h('p', {}, 'Nichts gefunden.')); else c.append(items.reduce((box, it) => { const p = h('div', {class: 'pair'}); p.append(...it); box.append(p); return box; }, h('div')));
+    root.append(c);
+  };
+  block('Ohne Verknüpfung', 'Diese Notizen hängen an nichts. Entweder fehlen Links oder der Eintrag ist überflüssig.', L.einzel.map(id => [linkBtn(id)]));
+  block('Verknüpfen? Gleiche Themen, noch keine Verbindung', 'Aus gemeinsamen Themen berechnet (mindestens zwei). Das ist ein Vorschlag, keine Tatsache: Prüfe, ob die Verbindung inhaltlich stimmt.', L.vorschlaege.map(p => [linkBtn(p.a), document.createTextNode('↔'), linkBtn(p.b), h('span', {class: 'tag'}, p.tags.join(', '))]));
+  block('Stand prüfen', 'Version im Projekt weicht von der aktuellen ab oder ist unbekannt.', L.veraltet.map(id => [linkBtn(id), h('span', {class: 'muted'}, `${byId[id].versionHier} → ${byId[id].versionAktuell}`)]));
+  block('Nur ein Link', 'Hängen an genau einer Stelle und sind damit leicht zu übersehen.', L.schwach.map(id => [linkBtn(id)]));
+  block('Defekte Links', 'Verweise auf Notizen, die es nicht gibt.', L.defekt.map(d => [h('span', {}, `${d.von} → ${d.nach}`)]));
+})();
+
+// Liste
+(function () {
+  const root = document.getElementById('tab-liste');
+  bereiche.forEach(b => {
+    const c = h('div', {class: 'card'}); c.append(h('h2', {}, b));
+    D.notes.filter(n => n.bereich === b).forEach(n => { const p = h('div', {class: 'pair'}); p.append(linkBtn(n.id), h('span', {class: 'tag'}, TYP[n.typ] || n.typ)); if (n.status) p.append(h('span', {class: 'chip c-' + n.status}, STATUS[n.status])); p.append(h('span', {class: 'muted'}, deg[n.id] + ' Verknüpfungen')); c.append(p); });
+    root.append(c);
+  });
+})();
+
+function showTab(t) {
+  document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t));
+  ['graph', 'luecken', 'liste'].forEach(x => document.getElementById('tab-' + x).classList.toggle('hidden', x !== t));
+}
+document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+render();
+</script>
+</body>
+</html>
