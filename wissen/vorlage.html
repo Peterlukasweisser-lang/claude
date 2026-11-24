@@ -92,7 +92,7 @@ ul{margin:4px 0 0;padding-left:18px}li{margin:2px 0}
 <script>
 const D = __DATA__;
 const COL = {Klasse:'#c2410c',Medien:'#2d6a57',Konzept:'#7c3aed',Schule:'#0369a1',Material:'#a16207',Dienst:'#be123c',Werkzeug:'#64748b',Sonstiges:'#6b7280'};
-const TYP = {projekt:'Projekt',app:'App',konzept:'Konzept',skill:'Skill'};
+const TYP = {projekt:'Projekt',app:'App',konzept:'Konzept',skill:'Skill',dokument:'Dokument'};
 const STATUS = {ok:'in Ordnung',ueberarbeiten:'überarbeiten',leer:'leer oder fast leer'};
 const byId = Object.fromEntries(D.notes.map(n => [n.id, n]));
 const NS = 'http://www.w3.org/2000/svg';
@@ -125,7 +125,7 @@ bereiche.forEach(b => {
 
 // Legende
 const leg = document.getElementById('legend');
-[['Kreis', 'Projekt'], ['Quadrat', 'App'], ['Raute', 'Konzept'], ['Dreieck', 'Skill']].forEach(([f, t]) => leg.append(h('span', {}, f + ' = ' + t)));
+[['Kreis', 'Projekt'], ['Quadrat', 'App'], ['Raute', 'Konzept'], ['Dreieck', 'Skill'], ['Abgerundetes Rechteck', 'Dokument']].forEach(([f, t]) => leg.append(h('span', {}, f + ' = ' + t)));
 leg.append(h('span', {}, 'Dicker Rand = angewählt. Je mehr Verknüpfungen, desto größer.'));
 
 // Layout (einfache Kräfte-Simulation)
@@ -158,6 +158,7 @@ function shapeFor(n) {
   let s;
   if (n.typ === 'app') s = el('rect', {x: -r, y: -r, width: 2 * r, height: 2 * r, rx: 3});
   else if (n.typ === 'konzept') s = el('polygon', {points: `0,${-r * 1.3} ${r * 1.3},0 0,${r * 1.3} ${-r * 1.3},0`});
+  else if (n.typ === 'dokument') s = el('rect', {x: -r * 1.2, y: -r * .8, width: 2.4 * r, height: 1.6 * r, rx: r * .8});
   else if (n.typ === 'skill') s = el('polygon', {points: `0,${-r * 1.2} ${r * 1.15},${r * .9} ${-r * 1.15},${r * .9}`});
   else s = el('circle', {r});
   s.setAttribute('class', 'shape'); s.setAttribute('fill', c); return s;
